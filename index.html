@@ -1,0 +1,250 @@
+<!DOCTYPE html> 
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FIBI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="add.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eruda@3.4.1/eruda.min.js"></script>
+    <script>eruda.init();</script>
+</head>
+<body>
+<!-- ==========================================
+     HEADER
+========================================== -->
+<div id="header" class="hidden">
+    <!-- Левая часть (header-glass) -->
+    <div class="header-glass">
+        <img id="user-avatar" src="" alt="Аватар" class="header-avatar" onclick="window.openDrawer()">
+        <div class="coins-badge" onclick="window.goToTasks()">
+            <span class="coin-icon">🪙</span>
+            <span class="coin-amount" id="header-coins-amount">0</span>
+        </div>
+    </div>
+    
+    <!-- Центр (динамический) -->
+    <div class="header-center" id="header-center"></div>
+    
+    <!-- Правая часть (динамическая) -->
+    <div class="header-right" id="header-right"></div>
+</div>
+
+    <!-- ==========================================
+         PROFILE CARD
+    ========================================== -->
+    <div id="profile-card" class="hidden">
+        <div class="profile-content">
+            <div class="profile-scrollable-zone">
+                <div id="tab-profile" class="modal-tab hidden">
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 15px;">
+                        <img id="card-avatar" src="" alt="Аватар пользователя" style="width: 55px; height: 55px; border-radius: 50%; margin-bottom: 8px; border: 2px solid var(--button-color);">
+                        <div id="user-name" style="font-weight: bold; font-size: 15px; color: var(--text-color);">Пользователь</div>
+                    </div>
+                    
+                    <div style="margin-top: 16px; border-top: 1px solid var(--app-border-color, rgba(0,0,0,0.06)); padding-top: 16px;">
+                        <p style="font-size: 13px; font-weight: 600; color: var(--app-text-secondary, #4A4A5A); margin-bottom: 12px;">🎨 Выберите тему</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="theme-selector-btn" data-theme-btn="light" onclick="window.themeManager.setTheme('light')">
+                                <i data-lucide="sun"></i> Light 
+                            </button>
+                            <button class="theme-selector-btn" data-theme-btn="amoled" onclick="window.themeManager.setTheme('amoled')">
+                                <i data-lucide="monitor"></i> Dark
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-chats" class="modal-tab hidden">
+                    <div class="modal-sticky-header">
+                        <p id="dialogs-label" style="font-size: 13px; font-weight: 600; color: var(--hint-color); margin: 0;">💬 Ваши диалоги:</p>
+                        <div style="display: flex; gap: 6px;">
+                            <button id="new-chat-btn" class="btn" style="padding: 5px 12px; font-size: 12px; border-radius: 8px;" onclick="window.chatUI.createNewChat()">
+                                <i data-lucide="plus"></i> Новый чат
+                            </button>
+                            <button class="btn" style="padding: 5px 12px; font-size: 12px; border-radius: 8px; background: rgba(231,76,60,0.1); color: #e74c3c; display: flex; align-items: center; gap: 4px;" onclick="window.openTrashModal()">
+                                <i data-lucide="trash-2"></i>
+                                <span id="trash-count" style="font-size: 10px; background: #e74c3c; color: white; border-radius: 50%; padding: 1px 6px; min-width: 18px; text-align: center; display: none;">0</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="chat-filters" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.04);">
+                        <button class="filter-chip active" data-topic="all" onclick="window.profileUI.applyChatFilter('all')">Все</button>
+                        <button class="filter-chip" data-topic="code" onclick="window.profileUI.applyChatFilter('code')">#кодинг</button>
+                        <button class="filter-chip" data-topic="creative" onclick="window.profileUI.applyChatFilter('creative')">#креатив</button>
+                        <button class="filter-chip" data-topic="fast" onclick="window.profileUI.applyChatFilter('fast')">#флуд</button>
+                        <button class="filter-chip" data-topic="kitchen" onclick="window.profileUI.applyChatFilter('kitchen')">#кухня</button>
+                        <button class="filter-chip" data-topic="analytics" onclick="window.profileUI.applyChatFilter('analytics')">#аналитика</button>
+                    </div>
+                    <div id="history-chats-list"></div>
+                </div>
+
+                <div id="tab-favorites" class="modal-tab hidden">
+                    <div class="modal-sticky-header">
+                        <p id="fav-title-label" style="font-size: 13px; font-weight: 600; color: var(--hint-color); margin: 0;">⭐ Избранные ответы:</p>
+                    </div>
+                    <div id="global-favorites-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+            </div>
+            
+            <div id="dynamic-key-area">
+                <div id="sub-footer-key" class="hidden">
+                    <div style="width: 100%; padding: 10px; border-radius: 12px; background: rgba(var(--tg-theme-button-color, 0, 136, 204), 0.08); border: 1px dashed var(--button-color); color: var(--button-color); font-size: 13px; font-weight: 600; text-align: center; box-sizing: border-box;">
+                        🚀 Versatile AI — Beta Version
+                    </div>
+                </div>
+                <div id="sub-footer-context" class="hidden">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 13px; margin-bottom: 6px;">
+                        <span id="memory-label" style="color: var(--text-color); display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="brain" style="width: 16px; height: 16px;"></i> Память чата
+                            <span onclick="window.profileUI.toggleContextHelp(event)" style="cursor: pointer; background: rgba(0,0,0,0.05); width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: var(--hint-color);">❓</span>
+                        </span>
+                        <span id="context-range-value" style="color: var(--button-color);">15</span>
+                    </div>
+                    <div id="context-help-text" class="hidden" style="font-size: 11px; color: var(--hint-color); line-height: 1.4; text-align: left; background: var(--bg-color); padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid var(--button-color);"></div>
+                    <input type="range" id="context-slider" min="1" max="40" value="15" style="width: 100%; cursor: pointer; display: block;" oninput="window.profileUI.onContextSliderChange(this.value)" onchange="window.profileUI.saveContextSettings()">
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--hint-color); margin-top: 2px;"><span id="memory-off-label">1 (Выкл)</span><span id="memory-max-label">40 сообщений</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         TRASH MODAL
+    ========================================== -->
+    <div id="trash-modal" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100dvh; background:rgba(0,0,0,0.4); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:2000; display:none; align-items:center; justify-content:center; box-sizing:border-box; padding:20px;">
+        <div style="background:var(--bg-color); border-radius:24px; padding:20px; width:100%; max-width:420px; max-height:80dvh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-shrink:0;">
+                <h3 style="margin:0; color:var(--text-color); font-size:18px;">
+                    <i data-lucide="trash-2" style="width:20px;height:20px;"></i> Корзина
+                </h3>
+                <button onclick="window.closeTrashModal()" style="background:transparent; border:none; font-size:22px; cursor:pointer; color:var(--hint-color); padding:0 4px;">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="trash-list" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px; min-height:100px;"></div>
+            <p id="trash-empty" style="text-align:center; color:var(--hint-color); font-size:13px; margin:20px 0; display:none;">Корзина пуста</p>
+            <div id="trash-actions" style="display:none; flex-shrink:0; margin-top:16px; border-top:1px solid rgba(0,0,0,0.06); padding-top:16px;">
+                <button class="btn" style="width:100%; padding:12px; border-radius:12px; font-size:13px; font-weight:600; background:rgba(231,76,60,0.08); color:#e74c3c; border:1px solid rgba(231,76,60,0.2);" onclick="window.clearAllTrash()">
+                    <i data-lucide="trash-2"></i> Очистить корзину полностью
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         GUEST SCREEN
+    ========================================== -->
+    <div id="guest-screen" class="hidden">
+        <h1 id="error-title">Доступ ограничен</h1>
+        <p id="joke-text"></p>
+        <a href="https://t.me" class="btn" style="text-decoration:none; display:inline-block;"></a>
+    </div>
+
+    <!-- ==========================================
+         APP SCREEN
+    ========================================== -->
+    <div id="app-screen" style="display:none;"></div>
+
+    <!-- ==========================================
+         СКРИПТЫ
+    ========================================== -->
+    <!-- Supabase клиент для Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+
+    <!-- Core -->
+<script src="js/core/locale.js"></script>
+<script src="js/core/config.js"></script>
+<script src="js/core/theme-manager.js"></script>
+    <script src="js/core/event-bus.js"></script>
+<script src="js/core/header-manager.js"></script>
+<script src="js/core/module-loader.js"></script>
+<script src="js/core/navigation.js"></script>
+
+    <!-- Store -->
+    <script src="js/store/BaseStore.js"></script>
+    <script src="js/store/ChatStore.js"></script>
+    <script src="js/store/UserStore.js"></script>
+    <script src="js/store/SyncStore.js"></script>
+    <script src="js/store/OrganizerStore.js"></script>
+    <script src="js/store/TasksStore.js"></script>
+
+    <!-- Services -->
+    <script src="js/services/api.js"></script>
+    <script src="js/services/auth.js"></script>
+    <script src="js/services/chats.js"></script>
+    <script src="js/services/messages.js"></script>
+    <script src="js/services/organizer.js"></script>
+    <script src="js/services/sync.js"></script>
+
+    <!-- UI -->
+    <script src="js/modules/ui/renderer.js"></script>
+    <script src="js/modules/ui/chat-ui.js"></script>
+    <script src="js/modules/ui/profile-ui.js"></script>
+    <script src="js/modules/ui-footer.js"></script>
+    <script src="js/modules/trash.js"></script>
+
+    <!-- Chat -->
+    <script src="js/modules/chat/send.js"></script>
+    <script src="js/modules/chat/stream.js"></script>
+    <script src="js/modules/chat/voice.js"></script>
+    <script src="js/modules/chat/media.js"></script>
+
+    <!-- Trash & Export -->
+    <script src="js/modules/export-local.js"></script>
+
+    <!-- Utils -->
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/validators.js"></script>
+
+    <!-- Модули -->
+    <script src="js/modules/chat/ChatModule.js"></script>
+    <script src="js/modules/organizer/OrganizerModule.js"></script>
+    <script src="js/modules/profile/ProfileModule.js"></script>
+    <script src="js/modules/dashboard/DashboardModule.js"></script>
+    <script src="js/modules/games/GamesModule.js"></script>
+    <script src="js/modules/tasks/TasksModule.js"></script>
+
+    <!-- Core App -->
+    <script src="js/core/app.js"></script>
+
+    <!-- ==========================================
+         ИНИЦИАЛИЗАЦИЯ
+    ========================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            window.moduleLoader.register('dashboard', window.DashboardModule);
+            window.moduleLoader.register('organizer', window.OrganizerModule);
+            window.moduleLoader.register('games', window.GamesModule);
+            window.moduleLoader.register('tasks', window.TasksModule);
+            window.moduleLoader.register('chat', window.ChatModule);
+            window.moduleLoader.register('profile', window.ProfileModule);
+            
+            window.navigation.render();
+            window.moduleLoader.load('dashboard');
+            
+            console.log('🚀 Приложение инициализировано');
+        });
+    </script>
+
+    <!-- ==========================================
+         ИНИЦИАЛИЗАЦИЯ LUCIDE
+    ========================================== -->
+    <script>
+        setTimeout(function() {
+            if (typeof lucide !== 'undefined') {
+                try {
+                    lucide.createIcons();
+                    console.log('✅ Lucide иконки созданы');
+                } catch(e) {
+                    console.warn('⚠️ Ошибка создания иконок:', e);
+                }
+            }
+        }, 500);
+    </script>
+</body>
+</html>
