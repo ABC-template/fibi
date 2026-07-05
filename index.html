@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FIBI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="add.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eruda@3.4.1/eruda.min.js"></script>
+    <script>eruda.init();</script>
+</head>
+<body>
+
+<!-- ==========================================
+     HEADER
+========================================== -->
+<div id="header" class="hidden">
+    <div class="header-glass">
+        <img id="user-avatar" src="" alt="Аватар" class="header-avatar" onclick="window.openDrawer()">
+        <div class="coins-badge" onclick="window.goToTasks()">
+            <span class="coin-icon">🪙</span>
+            <span class="coin-amount" id="header-coins-amount">0</span>
+        </div>
+    </div>
+    <div class="header-center" id="header-center"></div>
+    <div class="header-right" id="header-right"></div>
+</div>
+
+<!-- ==========================================
+     GUEST SCREEN
+========================================== -->
+<div id="guest-screen" class="hidden">
+    <h1 id="error-title">Доступ ограничен</h1>
+    <p id="joke-text"></p>
+    <a href="https://t.me" class="btn" style="text-decoration:none; display:inline-block;"></a>
+</div>
+
+<!-- ==========================================
+     APP SCREEN
+========================================== -->
+<div id="app-screen" style="display:none;"></div>
+
+<!-- ==========================================
+     УНИВЕРСАЛЬНАЯ МОДАЛКА
+========================================== -->
+<div id="universal-modal" class="hidden" style="display:none;">
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content" id="modal-content">
+            <!-- Шапка -->
+            <div class="modal-header">
+                <h3 id="modal-title">Заголовок</h3>
+                <button id="modal-close" class="modal-close-btn">
+                    <i data-lucide="x" style="width:24px;height:24px;"></i>
+                </button>
+            </div>
+            
+            <!-- Тело -->
+            <div id="modal-body" class="modal-body">
+                <!-- Сюда подставляется контент -->
+            </div>
+            
+            <!-- Футер (опционально) -->
+            <div id="modal-footer" class="modal-footer hidden">
+                <!-- Сюда подставляются кнопки -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     СКРИПТЫ
+========================================== -->
+<!-- Supabase клиент для Realtime -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+<!-- Core -->
+<script src="js/core/locale.js"></script>
+<script src="js/core/config.js"></script>
+<script src="js/core/theme-manager.js"></script>
+<script src="js/core/event-bus.js"></script>
+<script src="js/core/header-manager.js"></script>
+<script src="js/core/navigation-state.js"></script>
+<script src="js/core/module-loader.js"></script>
+<script src="js/core/navigation.js"></script>
+<script src="js/core/back-button-manager.js"></script>
+<script src="js/core/modal-manager.js"></script>
+<!-- Store -->
+<script src="js/store/BaseStore.js"></script>
+<script src="js/store/ChatStore.js"></script>
+<script src="js/store/UserStore.js"></script>
+<script src="js/store/OrganizerStore.js"></script>
+<script src="js/store/TasksStore.js"></script>
+<!-- Services -->
+<script src="js/services/api.js"></script>
+<script src="js/services/auth.js"></script>
+<script src="js/services/chats.js"></script>
+<script src="js/services/messages.js"></script>
+<script src="js/services/organizer.js"></script>
+<script src="js/services/sync.js"></script>
+<!-- UI -->
+<script src="js/modules/ui/renderer.js"></script>
+<script src="js/modules/ui/chat-ui.js"></script>
+<script src="js/modules/ui/profile-ui.js"></script>
+<!-- Export -->
+<script src="js/modules/export-local.js"></script>
+<!-- Utils -->
+<script src="js/utils/helpers.js"></script>
+<script src="js/utils/validators.js"></script>
+<!-- Модули -->
+<!-- Chat List -->
+<script src="js/modules/chat-list/ChatListModule.js"></script>
+<!-- Chat -->
+<script src="js/modules/chat/ChatModule.js"></script>
+<script src="js/modules/chat/send.js"></script>
+<script src="js/modules/chat/stream.js"></script>
+<script src="js/modules/chat/voice.js"></script>
+<script src="js/modules/chat/media.js"></script>
+<script src="js/modules/ui-footer.js"></script>
+<!-- Organizer -->
+<script src="js/modules/organizer/OrganizerModule.js"></script>
+<!-- Profile -->
+<script src="js/modules/profile/ProfileModule.js"></script>
+<!-- Dashboard -->
+<script src="js/modules/dashboard/DashboardModule.js"></script>
+<!-- Games -->
+<script src="js/modules/games/GamesModule.js"></script>
+<!-- Tasks -->
+<script src="js/modules/tasks/TasksModule.js"></script>
+<!-- Core App -->
+<script src="js/core/app.js"></script>
+
+<!-- ==========================================
+     ИНИЦИАЛИЗАЦИЯ
+========================================== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        window.moduleLoader.register('dashboard', window.DashboardModule);
+        window.moduleLoader.register('organizer', window.OrganizerModule);
+        window.moduleLoader.register('chat-list', window.ChatListModule);
+        window.moduleLoader.register('chat', window.ChatModule);
+        window.moduleLoader.register('games', window.GamesModule);
+        window.moduleLoader.register('tasks', window.TasksModule);
+        window.moduleLoader.register('profile', window.ProfileModule);
+        
+        window.navigation.render();
+        window.moduleLoader.load('dashboard');
+        
+        console.log('🚀 Приложение инициализировано');
+    });
+</script>
+
+<!-- ==========================================
+     LUCIDE ИНИЦИАЛИЗАЦИЯ
+========================================== -->
+<script>
+    setTimeout(function() {
+        if (typeof lucide !== 'undefined') {
+            try {
+                lucide.createIcons();
+                console.log('✅ Lucide иконки созданы');
+            } catch(e) {
+                console.warn('⚠️ Ошибка создания иконок:', e);
+            }
+        }
+    }, 500);
+</script>
+
+</body>
+</html>

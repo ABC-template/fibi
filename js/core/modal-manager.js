@@ -1,0 +1,341 @@
+// ============================================
+// js/core/modal-manager.js
+// Описание: Универсальный менеджер модалок
+// Версия: 1.3.0 - ИНТЕГРАЦИЯ С BACKBUTTONMANAGER
+// ============================================
+
+class ModalManager {
+    constructor() {
+        this.modal = document.getElementById('universal-modal');
+        this.overlay = document.getElementById('modal-overlay');
+        this.content = document.getElementById('modal-content');
+        this.title = document.getElementById('modal-title');
+        this.body = document.getElementById('modal-body');
+        this.footer = document.getElementById('modal-footer');
+        this.closeBtn = document.getElementById('modal-close');
+        this.eventBus = window.eventBus;
+        
+        this._isOpen = false;
+        this._callbacks = {};
+        this._wasDrawerOpen = false;
+        this._drawerState = null;
+        this._isClosing = false;
+        
+        this._initEvents();
+    }
+
+    // ==========================================
+    // ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ
+    // ==========================================
+
+    _initEvents() {
+        // Закрытие по крестику
+        this.closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.close();
+        });
+
+        // Закрытие по клику на оверлей
+        this.overlay.addEventListener('click', (e) => {
+            if (e.target === this.overlay) {
+                e.stopPropagation();
+                this.close();
+            }
+        });
+
+        // Закрытие по системной кнопке "Назад" (через событие)
+        // BackButtonManager сам решает, закрывать ли модалку
+        document.addEventListener('backbutton', () => {
+            // Модалка закрывается только через крестик или оверлей
+            // BackButton не трогаем
+        });
+
+        console.log('✅ ModalManager v1.3.0 инициализирован');
+    }
+
+    // ==========================================
+    // ОТКРЫТИЕ МОДАЛКИ
+    // ==========================================
+
+    open(options = {}) {
+        const {
+            title = 'Заголовок',
+            content = '',
+            footer = '',
+            onOpen = null,
+            onClose = null,
+            onSave = null,
+            onCancel = null,
+            showFooter = false
+        } = options;
+
+        // Сбрасываем флаг закрытия
+        this._isClosing = false;
+
+        // Сохраняем колбэки
+        this._callbacks = { onOpen, onClose, onSave, onCancel };
+
+        // Запоминаем состояние сайдбара
+        const drawer = document.getElementById('drawer');
+        const overlay = document.getElementById('drawer-overlay');
+        
+        this._wasDrawerOpen = drawer?.classList.contains('active') || false;
+        
+        this._drawerState = {
+            isOpen: this._wasDrawerOpen,
+            overlayActive: overlay?.classList.contains('active') || false,
+            bodyOverflow: document.body.style.overflow
+        };
+
+        // Если сайдбар открыт — блокируем его
+        if (this._wasDrawerOpen && drawer) {
+            drawer.style.pointerEvents = 'none';
+            drawer.style.opacity = '0.5';
+            document.body.style.overflow = '';
+        }
+
+        // Устанавливаем контент
+        this.title.textContent = title;
+        this.body.innerHTML = content;
+
+        // Футер
+        if (showFooter && footer) {
+            this.footer.innerHTML = footer;
+            this.footer.classList.remove('hidden');
+            
+            const saveBtn = this.footer.querySelector('#modal-save-btn');
+            const cancelBtn = this.footer.querySelector('#modal-cancel-btn');
+            
+            if (saveBtn) {
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this._callbacks.onSave) {
+                        this._callbacks.onSave();
+                    }
+                });
+            }
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this._callbacks.onCancel) {
+                        this._callbacks.onCancel();
+                    }
+                    this.close();
+                });
+            }
+        } else {
+            this.footer.innerHTML = '';
+            this.footer.classList.add('hidden');
+        }
+
+        // Показываем модалку
+        this.modal.style.display = 'flex';
+        this.modal.style.visibility = 'visible';
+        this.modal.style.opacity = '1';
+        this.modal.classList.remove('hidden');
+        
+        // Анимация появления
+        this.content.style.transition = 'none';
+        this.content.style.transform = 'scale(0.95) translateY(20px)';
+        this.content.style.opacity = '0';
+        
+        requestAnimationFrame(() => {
+            this.content.style.transition = 'all 0.3s cubic-bezier(0.1, 0.8, 0.25, 1)';
+            this.content.style.transform = 'scale(1) translateY(0)';
+            this.content.style.opacity = '1';
+        });
+
+        this._isOpen = true;
+
+        // ✅ Отправляем событие об открытии модалки
+        if (this.eventBus) {
+            this.eventBus.emit('modal:state_changed', { isOpen: true });
+        }
+
+        // Создаём иконки Lucide внутри модалки
+        setTimeout(() => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }, 100);
+
+        // Вызываем onOpen
+        if (this._callbacks.onOpen) {
+            this._callbacks.onOpen();
+        }
+
+        console.log(`📱 Модалка открыта: ${title} (сайдбар был ${this._wasDrawerOpen ? 'открыт' : 'закрыт'})`);
+    }
+
+    // ==========================================
+    // ЗАКРЫТИЕ МОДАЛКИ
+    // ==========================================
+
+    close() {
+        if (this._isClosing || !this._isOpen) return;
+        this._isClosing = true;
+
+        // Анимация закрытия
+        this.content.style.transition = 'all 0.25s cubic-bezier(0.1, 0.8, 0.25, 1)';
+        this.content.style.transform = 'scale(0.95) translateY(20px)';
+        this.content.style.opacity = '0';
+
+        setTimeout(() => {
+            this.modal.style.display = 'none';
+            this.modal.style.visibility = 'hidden';
+            this.modal.style.opacity = '0';
+            this.modal.classList.add('hidden');
+            
+            // Восстанавливаем сайдбар
+            const drawer = document.getElementById('drawer');
+            if (drawer) {
+                drawer.style.pointerEvents = 'auto';
+                drawer.style.opacity = '1';
+            }
+
+            // Восстанавливаем состояние body
+            if (this._drawerState && this._drawerState.bodyOverflow) {
+                document.body.style.overflow = this._drawerState.bodyOverflow;
+            } else {
+                document.body.style.overflow = '';
+            }
+
+            this._isOpen = false;
+            this._isClosing = false;
+
+            // ✅ Отправляем событие о закрытии модалки
+            if (this.eventBus) {
+                this.eventBus.emit('modal:state_changed', { isOpen: false });
+            }
+
+            // Очищаем тело модалки
+            this.body.innerHTML = '';
+            this.footer.innerHTML = '';
+            this.footer.classList.add('hidden');
+
+            // Вызываем onClose
+            if (this._callbacks.onClose) {
+                this._callbacks.onClose();
+            }
+
+            // Очищаем колбэки
+            this._callbacks = {};
+            this._drawerState = null;
+
+            console.log('📱 Модалка закрыта');
+        }, 300);
+    }
+
+    // ==========================================
+    // ПРОВЕРКА СОСТОЯНИЯ
+    // ==========================================
+
+    isOpen() {
+        return this._isOpen;
+    }
+
+    // ==========================================
+    // ОБНОВЛЕНИЕ КОНТЕНТА
+    // ==========================================
+
+    updateContent(content) {
+        if (this._isOpen) {
+            this.body.innerHTML = content;
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }, 100);
+        }
+    }
+
+    updateTitle(title) {
+        if (this._isOpen) {
+            this.title.textContent = title;
+        }
+    }
+
+    updateFooter(footer) {
+        if (this._isOpen) {
+            if (footer) {
+                this.footer.innerHTML = footer;
+                this.footer.classList.remove('hidden');
+                
+                const saveBtn = this.footer.querySelector('#modal-save-btn');
+                const cancelBtn = this.footer.querySelector('#modal-cancel-btn');
+                
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this._callbacks.onSave) {
+                            this._callbacks.onSave();
+                        }
+                    });
+                }
+                
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this._callbacks.onCancel) {
+                            this._callbacks.onCancel();
+                        }
+                        this.close();
+                    });
+                }
+            } else {
+                this.footer.innerHTML = '';
+                this.footer.classList.add('hidden');
+            }
+        }
+    }
+
+    // ==========================================
+    // ПРИНУДИТЕЛЬНОЕ ЗАКРЫТИЕ
+    // ==========================================
+
+    forceClose() {
+        if (this._isOpen) {
+            this.modal.style.display = 'none';
+            this.modal.style.visibility = 'hidden';
+            this.modal.style.opacity = '0';
+            this.modal.classList.add('hidden');
+            
+            const drawer = document.getElementById('drawer');
+            if (drawer) {
+                drawer.style.pointerEvents = 'auto';
+                drawer.style.opacity = '1';
+            }
+            
+            document.body.style.overflow = '';
+            this._isOpen = false;
+            this._isClosing = false;
+            this.body.innerHTML = '';
+            this.footer.innerHTML = '';
+            this.footer.classList.add('hidden');
+            this._callbacks = {};
+            this._drawerState = null;
+            
+            if (this.eventBus) {
+                this.eventBus.emit('modal:state_changed', { isOpen: false });
+            }
+            
+            console.log('📱 Модалка принудительно закрыта');
+        }
+    }
+}
+
+// Создаём глобальный экземпляр
+window.ModalManager = ModalManager;
+window.modalManager = new ModalManager();
+
+// Глобальные функции для удобства
+window.showModal = function(options) {
+    window.modalManager.open(options);
+};
+
+window.closeModal = function() {
+    window.modalManager.close();
+};
+
+console.log('✅ ModalManager v1.3.0 загружен');
