@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/chat/ChatModule.js
 // Описание: Страница чата (открывается из ChatListModule)
-// Версия: 6.0.0 - правильная работа с ChatListModule
+// Версия: 7.0.0 - УБРАНА КНОПКА НАЗАД ИЗ ХЕДЕРА
 // ============================================
 
 class ChatModule {
@@ -20,7 +20,7 @@ class ChatModule {
         this._subscriptions = [];
         this._rendered = false;
         this._isShowing = false;
-        this._pendingChatId = null;  // Для отложенной загрузки
+        this._pendingChatId = null;
     }
 
     async init() {
@@ -30,11 +30,11 @@ class ChatModule {
         this._subscribeToEvents();
         this.isInitialized = true;
         
-        console.log('✅ ChatModule v6.0.0 инициализирован');
+        console.log('✅ ChatModule v7.0.0 инициализирован');
     }
 
     // ==========================================
-    // ПОКАЗАТЬ МОДУЛЬ (вызывается из moduleLoader)
+    // ПОКАЗАТЬ МОДУЛЬ
     // ==========================================
 
     async show(params = {}) {
@@ -42,20 +42,17 @@ class ChatModule {
         
         const { chatId, topic } = params;
         
-        // Если передан chatId — открываем этот чат
         if (chatId) {
             this._openChat(chatId, topic);
             return;
         }
         
-        // Если нет chatId, но есть активный чат — показываем его
         const activeChat = this.chatStore.getActiveChat();
         if (activeChat && this.chatStore.hasRealMessages(activeChat)) {
             this._openChat(activeChat.id, activeChat.topic || this.chatStore.currentTopic);
             return;
         }
         
-        // Если ничего нет — создаем новый чат
         const newChat = this.chatStore.createTempChat(this.chatStore.currentTopic);
         if (newChat) {
             this._openChat(newChat.id, newChat.topic || this.chatStore.currentTopic);
@@ -65,7 +62,7 @@ class ChatModule {
     }
 
     // ==========================================
-    // ОТКРЫТЬ ЧАТ (основной метод)
+    // ОТКРЫТЬ ЧАТ
     // ==========================================
 
     _openChat(chatId, topic) {
@@ -76,44 +73,34 @@ class ChatModule {
 
         console.log(`📂 _openChat: ${chatId}, topic: ${topic}`);
         
-        // Сохраняем ID чата
         this._chatId = chatId;
         this._topic = topic || this.chatStore.currentTopic;
         
-        // Рендерим интерфейс (если еще не отрендерен)
         if (!this._rendered) {
             this._render();
         }
         
-        // Показываем контейнер
         this.container.classList.remove('hidden');
         this.container.style.display = 'flex';
         this.container.style.flexDirection = 'column';
         this.container.style.height = '100%';
         this.container.style.width = '100%';
         
-        // Скрываем нижнюю навигацию
         if (window.navigation) {
             window.navigation.hide();
         }
         
-        // Обновляем заголовок
         this._updateHeader();
-        
-        // Загружаем сообщения
         this._loadMessages();
         
-        // Обновляем состояние
         this._isShowing = true;
-        
-        // Устанавливаем активный чат в Store
         this.chatStore.setActiveChat(this._topic, this._chatId);
         
         console.log(`✅ Чат ${this._chatId} открыт`);
     }
 
     // ==========================================
-    // ОБНОВЛЕНИЕ ЧАТА (переключение между чатами)
+    // ОБНОВЛЕНИЕ ЧАТА
     // ==========================================
 
     update(params = {}) {
@@ -124,19 +111,17 @@ class ChatModule {
             return;
         }
         
-        // Если это другой чат — переключаемся
         if (this._chatId !== chatId) {
             console.log(`🔄 Переключение с ${this._chatId} на ${chatId}`);
             this._openChat(chatId, topic);
         } else {
-            // Тот же чат — просто обновляем сообщения
             this._loadMessages();
             this._updateHeader();
         }
     }
 
     // ==========================================
-    // РЕНДЕРИНГ ИНТЕРФЕЙСА
+    // РЕНДЕРИНГ
     // ==========================================
 
     _render() {
@@ -357,7 +342,6 @@ class ChatModule {
         const found = this.chatStore.findChatById(this._chatId);
         if (!found) {
             console.warn(`⚠️ Чат ${this._chatId} не найден`);
-            // Показываем сообщение о том, что чат не найден
             container.innerHTML = `
                 <div style="padding:40px;text-align:center;color:var(--app-text-tertiary);">
                     <div style="font-size:48px;margin-bottom:12px;">💬</div>
@@ -372,7 +356,6 @@ class ChatModule {
 
         console.log(`📋 Загружено ${messages.length} сообщений для чата ${this._chatId}`);
 
-        // Очищаем контейнер
         container.innerHTML = '';
 
         if (messages.length === 0) {
@@ -380,12 +363,10 @@ class ChatModule {
             return;
         }
 
-        // Сортируем сообщения по дате
         const sortedMessages = [...messages].sort((a, b) => {
             return new Date(a.created_at || 0) - new Date(b.created_at || 0);
         });
 
-        // Рендерим каждое сообщение
         let renderedCount = 0;
         for (const msg of sortedMessages) {
             if (msg.deleted_at) continue;
@@ -405,7 +386,6 @@ class ChatModule {
 
         console.log(`✅ Отрендерено ${renderedCount} сообщений`);
 
-        // Скроллим вниз
         setTimeout(() => {
             container.scrollTop = container.scrollHeight;
         }, 100);
@@ -430,7 +410,7 @@ class ChatModule {
     }
 
     // ==========================================
-    // ОБНОВЛЕНИЕ ЗАГОЛОВКА
+    // ОБНОВЛЕНИЕ ЗАГОЛОВКА (БЕЗ КНОПКИ НАЗАД!)
     // ==========================================
 
     _updateHeader() {
@@ -440,16 +420,10 @@ class ChatModule {
         if (!found) return;
         
         const chatTitle = found.chat.title || 'Versatile AI';
+        
+        // ✅ ТОЛЬКО ЗАГОЛОВОК, БЕЗ КНОПОК НАЗАД
         this.headerManager.setTitle(chatTitle);
         this.headerManager.setActions([
-            {
-                id: 'back-to-list',
-                icon: 'list',
-                title: 'Список чатов',
-                onClick: () => {
-                    this._goBackToList();
-                }
-            },
             {
                 id: 'context',
                 icon: 'brain',
@@ -485,11 +459,8 @@ class ChatModule {
 
     _goBackToList() {
         console.log('🔙 Возврат в ChatListModule');
-        
-        // Скрываем себя
         this.hide();
         
-        // Показываем ChatListModule
         if (this.moduleLoader) {
             this.moduleLoader.load('chat-list', {}, { replace: true });
         } else if (this.navigationState) {
@@ -500,7 +471,7 @@ class ChatModule {
     }
 
     // ==========================================
-    // ФУТЕР (кнопки ввода)
+    // ФУТЕР
     // ==========================================
 
     _initFooter() {
@@ -584,7 +555,6 @@ class ChatModule {
     // ==========================================
 
     _subscribeToEvents() {
-        // Обновление сообщений
         const unsubMsg = this.eventBus.on('chat:message_added', (data) => {
             if (data.chatId === this._chatId && this._isShowing) {
                 this._loadMessages();
@@ -613,7 +583,6 @@ class ChatModule {
         }, this);
         this._subscriptions.push(unsubRename);
 
-        // Обновление всех чатов (например, после синхронизации)
         const unsubAll = this.eventBus.on('chat:all_updated', () => {
             if (this._isShowing && this._chatId) {
                 this._loadMessages();
@@ -621,7 +590,6 @@ class ChatModule {
         }, this);
         this._subscriptions.push(unsubAll);
 
-        // Обновление при переключении чата извне
         const unsubOpen = this.eventBus.on('navigation:open_chat', (data) => {
             if (data.chatId && this._isShowing) {
                 this.update(data);
@@ -642,7 +610,6 @@ class ChatModule {
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
         
-        // Показываем нижнюю навигацию
         if (window.navigation) {
             window.navigation.show();
         }
@@ -674,4 +641,4 @@ class ChatModule {
 }
 
 window.ChatModule = ChatModule;
-console.log('✅ ChatModule v6.0.0 загружен');
+console.log('✅ ChatModule v7.0.0 загружен (убрана кнопка назад)');
