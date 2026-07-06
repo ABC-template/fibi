@@ -1,7 +1,7 @@
 // ============================================
 // js/core/back-button-manager.js
 // Описание: Управление системной кнопкой «Назад» Telegram
-// Версия: 4.0.1 - ИСПРАВЛЕНА ОШИБКА this._hide
+// Версия: 4.0.2 - ИСПРАВЛЕН КОНФЛИКТ ПЕРЕМЕННЫХ
 // ============================================
 
 class BackButtonManager {
@@ -56,7 +56,7 @@ class BackButtonManager {
         // Первоначальное обновление
         setTimeout(() => this._update(), 100);
 
-        console.log('✅ BackButtonManager v4.0.1 инициализирован (чат, профиль, сайдбар)');
+        console.log('✅ BackButtonManager v4.0.2 инициализирован (чат, профиль, сайдбар)');
     }
 
     // ==========================================
@@ -78,7 +78,6 @@ class BackButtonManager {
             return false;
         }
 
-        // ✅ Используем единый метод для проверки
         return this.navigationState.shouldShowBackButton();
     }
 
@@ -153,15 +152,14 @@ class BackButtonManager {
 }
 
 // ==========================================
-// СОЗДАЕМ ЭКЗЕМПЛЯР
+// СОЗДАЕМ ЭКЗЕМПЛЯР (с уникальным именем)
 // ==========================================
 
 window.BackButtonManager = BackButtonManager;
 
-// Ждём navigationState
-const checkInterval = setInterval(() => {
+let _bbmCheckInterval = setInterval(() => {
     if (window.navigationState) {
-        clearInterval(checkInterval);
+        clearInterval(_bbmCheckInterval);
         if (!window.backButtonManager) {
             window.backButtonManager = new BackButtonManager();
             console.log('✅ BackButtonManager создан');
@@ -169,7 +167,6 @@ const checkInterval = setInterval(() => {
     }
 }, 50);
 
-// Если через 3 секунды всё ещё нет — создаём вручную
 setTimeout(() => {
     if (!window.backButtonManager) {
         window.backButtonManager = new BackButtonManager();
@@ -183,4 +180,4 @@ window.refreshBackButton = function() {
     }
 };
 
-console.log('✅ BackButtonManager v4.0.1 загружен');
+console.log('✅ BackButtonManager v4.0.2 загружен');
