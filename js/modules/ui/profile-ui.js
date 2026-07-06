@@ -135,23 +135,14 @@ class ProfileUI {
     _openChatFromFavorite(chatId, topic, msgId) {
         console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}, сообщение: ${msgId}`);
         
-        // ✅ 1. Закрываем модалку (через navigationState)
-        if (this.navigationState) {
-            this.navigationState.toggleModal(false, 'favorites');
-        } else if (window.modalManager) {
+        // ✅ 1. ФИЗИЧЕСКИ закрываем модалку
+        if (window.modalManager) {
             window.modalManager.close();
         }
         
-        // ✅ 2. Закрываем сайдбар (если открыт)
-        if (this.navigationState && this.navigationState._state.isDrawerOpen) {
-            this.navigationState.toggleDrawer(false);
-        } else {
-            // Fallback: физически закрываем
-            const drawer = document.getElementById('drawer');
-            const overlay = document.getElementById('drawer-overlay');
-            if (drawer?.classList.contains('active')) {
-                window.closeDrawer();
-            }
+        // ✅ 2. ФИЗИЧЕСКИ закрываем сайдбар
+        if (window.closeDrawer) {
+            window.closeDrawer();
         }
         
         // ✅ 3. Открываем чат через навигацию
