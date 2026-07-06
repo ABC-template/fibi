@@ -51,17 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
             resizeTextArea();
             userInput.focus();
 
-            // ✅ СКРЫВАЕМ НИЖНЮЮ НАВИГАЦИЮ ПРИ ОТКРЫТИИ КАПСУЛЫ
+            // Скрываем нижнюю навигацию при открытии капсулы
             const nav = document.getElementById('bottom-nav');
             if (nav) {
                 nav.style.display = 'none';
             }
 
-            if (tg?.BackButton) {
-                tg.BackButton.show();
-                tg.BackButton.offClick();
-                tg.BackButton.onClick(() => { window.collapseInputArea(); });
-            }
+            // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+            // Капсула НЕ влияет на системную кнопку
         };
 
         window.collapseInputArea = function() {
@@ -75,21 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
             fabBtn.style.opacity = '1';
             fabBtn.style.pointerEvents = 'auto';
 
-            // ✅ ВОЗВРАЩАЕМ НИЖНЮЮ НАВИГАЦИЮ
+            // Возвращаем нижнюю навигацию
             const nav = document.getElementById('bottom-nav');
             if (nav) {
                 nav.style.display = 'flex';
             }
             
-            if (tg?.BackButton) tg.BackButton.hide();
+            // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+            // Капсула НЕ влияет на системную кнопку
         };
 
         overlay.addEventListener('click', () => {
             window.collapseInputArea();
         });
-        
-        // ✅ ДОПОЛНИТЕЛЬНО: при скролле чата закрываем капсулу (если открыта)
-        // Не закрываем, чтобы не мешать пользователю
         
         if (tg) {
             try {
