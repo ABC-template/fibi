@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/games/GamesModule.js
-// Описание: Модуль игр (контейнер)
-// Версия: 3.0.0 - ПОДДЕРЖКА ИГР (Тетрис, Змейка, Виселица)
+// Описание: Модуль игр (контейнер) с полноэкранным режимом
+// Версия: 3.1.0 - ПОЛНОЭКРАННЫЙ РЕЖИМ ДЛЯ ИГР
 // ============================================
 
 class GamesModule {
@@ -19,6 +19,7 @@ class GamesModule {
         this._gameContainer = null;
         this._gameContent = null;
         this._gameTitle = null;
+        this._isFullscreen = false;
     }
 
     async init() {
@@ -45,7 +46,7 @@ class GamesModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ GamesModule v3.0.0 инициализирован');
+        console.log('✅ GamesModule v3.1.0 инициализирован');
     }
 
     // ==========================================
@@ -69,6 +70,14 @@ class GamesModule {
                         <div style="font-size:10px; color:var(--app-accent-primary); margin-top:4px;" id="tetris-high-score">🏆 0</div>
                     </div>
                     
+                    <!-- Судоку -->
+                    <div onclick="window.gamesModule.openGame('sudoku')" style="background:var(--app-bg-secondary); padding:20px; border-radius:16px; text-align:center; cursor:pointer; border:1px solid var(--app-border-color-light); transition:all 0.2s;">
+                        <div style="font-size:40px; margin-bottom:8px;">🧩</div>
+                        <div style="font-size:14px; font-weight:600; color:var(--app-text-primary);">Судоку</div>
+                        <div style="font-size:11px; color:var(--app-text-tertiary);">Скоро</div>
+                        <div style="font-size:10px; color:var(--app-accent-primary); margin-top:4px;" id="sudoku-high-score">🏆 0</div>
+                    </div>
+                    
                     <!-- Змейка -->
                     <div onclick="window.gamesModule.openGame('snake')" style="background:var(--app-bg-secondary); padding:20px; border-radius:16px; text-align:center; cursor:pointer; border:1px solid var(--app-border-color-light); transition:all 0.2s;">
                         <div style="font-size:40px; margin-bottom:8px;">🐍</div>
@@ -83,13 +92,6 @@ class GamesModule {
                         <div style="font-size:14px; font-weight:600; color:var(--app-text-primary);">Виселица</div>
                         <div style="font-size:11px; color:var(--app-text-tertiary);">Угадай слово</div>
                         <div style="font-size:10px; color:var(--app-accent-primary); margin-top:4px;" id="hangman-high-score">🏆 0</div>
-                    </div>
-                    
-                    <!-- Шахматы (заглушка) -->
-                    <div style="background:var(--app-bg-secondary); padding:20px; border-radius:16px; text-align:center; cursor:default; border:1px solid var(--app-border-color-light); opacity:0.5;">
-                        <div style="font-size:40px; margin-bottom:8px;">♟️</div>
-                        <div style="font-size:14px; font-weight:600; color:var(--app-text-primary);">Шахматы</div>
-                        <div style="font-size:11px; color:var(--app-text-tertiary);">Скоро</div>
                     </div>
                 </div>
                 
@@ -120,16 +122,97 @@ class GamesModule {
 
     _updateHighScores() {
         const tetrisScore = this.tasksStore?.get('tetris_high_score') || 0;
+        const sudokuScore = this.tasksStore?.get('sudoku_high_score') || 0;
         const snakeScore = this.tasksStore?.get('snake_high_score') || 0;
         const hangmanScore = this.tasksStore?.get('hangman_high_score') || 0;
 
         const tetrisEl = document.getElementById('tetris-high-score');
+        const sudokuEl = document.getElementById('sudoku-high-score');
         const snakeEl = document.getElementById('snake-high-score');
         const hangmanEl = document.getElementById('hangman-high-score');
 
         if (tetrisEl) tetrisEl.textContent = `🏆 ${tetrisScore}`;
+        if (sudokuEl) sudokuEl.textContent = `🏆 ${sudokuScore}`;
         if (snakeEl) snakeEl.textContent = `🏆 ${snakeScore}`;
         if (hangmanEl) hangmanEl.textContent = `🏆 ${hangmanScore}`;
+    }
+
+    // ==========================================
+    // ПОЛНОЭКРАННЫЙ РЕЖИМ
+    // ==========================================
+
+    _enterFullscreen() {
+        if (this._isFullscreen) return;
+        this._isFullscreen = true;
+
+        // Скрываем хедер
+        const header = document.getElementById('header');
+        if (header) {
+            header.classList.add('hidden');
+        }
+
+        // Скрываем нижнюю навигацию
+        if (window.navigation) {
+            window.navigation.hide();
+        }
+
+        // Растягиваем контейнер игры на весь экран
+        if (this._gameContainer) {
+            this._gameContainer.style.position = 'fixed';
+            this._gameContainer.style.top = '0';
+            this._gameContainer.style.left = '0';
+            this._gameContainer.style.width = '100vw';
+            this._gameContainer.style.height = '100dvh';
+            this._gameContainer.style.zIndex = '1000';
+            this._gameContainer.style.margin = '0';
+            this._gameContainer.style.borderRadius = '0';
+            this._gameContainer.style.background = 'var(--app-bg-primary)';
+            this._gameContainer.style.border = 'none';
+            this._gameContainer.style.maxHeight = '100dvh';
+            this._gameContainer.style.minHeight = '100dvh';
+        }
+
+        // Добавляем класс на body
+        document.body.classList.add('game-fullscreen');
+
+        console.log('🎮 Полноэкранный режим включён');
+    }
+
+    _exitFullscreen() {
+        if (!this._isFullscreen) return;
+        this._isFullscreen = false;
+
+        // Показываем хедер
+        const header = document.getElementById('header');
+        if (header) {
+            header.classList.remove('hidden');
+        }
+
+        // Показываем нижнюю навигацию
+        if (window.navigation) {
+            window.navigation.show();
+        }
+
+        // Возвращаем контейнер в обычное состояние
+        if (this._gameContainer) {
+            this._gameContainer.style.position = '';
+            this._gameContainer.style.top = '';
+            this._gameContainer.style.left = '';
+            this._gameContainer.style.width = '';
+            this._gameContainer.style.height = '';
+            this._gameContainer.style.zIndex = '';
+            this._gameContainer.style.margin = '';
+            this._gameContainer.style.borderRadius = '';
+            this._gameContainer.style.background = '';
+            this._gameContainer.style.border = '';
+            this._gameContainer.style.maxHeight = '';
+            this._gameContainer.style.minHeight = '';
+        }
+
+        // Убираем класс с body
+        document.body.classList.remove('game-fullscreen');
+
+        console.log('🎮 Полноэкранный режим выключен');
     }
 
     // ==========================================
@@ -142,6 +225,7 @@ class GamesModule {
         // Проверяем, поддерживается ли игра
         const gameMap = {
             'tetris': { class: window.TetrisGame, name: '🧩 Тетрис' },
+            'sudoku': { class: window.SudokuGame, name: '🧩 Судоку' },
             'snake': { class: window.SnakeGame, name: '🐍 Змейка' },
             'hangman': { class: window.HangmanGame, name: '💀 Виселица' }
         };
@@ -204,6 +288,9 @@ class GamesModule {
             this.headerManager.setActions([]);
         }
 
+        // ✅ ВКЛЮЧАЕМ ПОЛНОЭКРАННЫЙ РЕЖИМ
+        this._enterFullscreen();
+
         // ✅ Сообщаем NavigationState о переходе в игру
         if (this.navigationState) {
             this.navigationState._state.params = {
@@ -219,7 +306,7 @@ class GamesModule {
             this.eventBus.emit('games:mode_changed', { mode: 'game', gameId }, this);
         }
 
-        console.log(`✅ Игра ${gameId} открыта`);
+        console.log(`✅ Игра ${gameId} открыта в полноэкранном режиме`);
     }
 
     // ==========================================
@@ -238,6 +325,9 @@ class GamesModule {
             }
             this._gameInstance = null;
         }
+
+        // ✅ ВЫКЛЮЧАЕМ ПОЛНОЭКРАННЫЙ РЕЖИМ
+        this._exitFullscreen();
 
         // Скрываем контейнер
         if (this._gameContainer) {
@@ -333,6 +423,7 @@ class GamesModule {
         if (this._mode === 'game' && this._currentGameId) {
             const gameNames = {
                 tetris: '🧩 Тетрис',
+                sudoku: '🧩 Судоку',
                 snake: '🐍 Змейка',
                 hangman: '💀 Виселица'
             };
@@ -340,10 +431,18 @@ class GamesModule {
                 this.headerManager.setTitle(gameNames[this._currentGameId] || 'Игра');
                 this.headerManager.setActions([]);
             }
+            // Если игра открыта, но полноэкранный режим почему-то не активен
+            if (!this._isFullscreen) {
+                this._enterFullscreen();
+            }
         } else {
             if (this.headerManager) {
                 this.headerManager.setTitle(null);
                 this.headerManager.setActions([]);
+            }
+            // Если мы не в игре, но полноэкранный режим активен — выключаем
+            if (this._isFullscreen) {
+                this._exitFullscreen();
             }
         }
         
@@ -366,6 +465,9 @@ class GamesModule {
             this._gameInstance = null;
             this._mode = 'list';
             this._currentGameId = null;
+            
+            // Выключаем полноэкранный режим
+            this._exitFullscreen();
             
             if (this._gameContainer) {
                 this._gameContainer.style.display = 'none';
@@ -394,6 +496,9 @@ class GamesModule {
             this._gameInstance = null;
         }
 
+        // Выключаем полноэкранный режим
+        this._exitFullscreen();
+
         for (const unsub of this._subscriptions) {
             try {
                 unsub();
@@ -408,4 +513,4 @@ class GamesModule {
 
 window.GamesModule = GamesModule;
 
-console.log('✅ GamesModule v3.0.0 загружен (поддержка игр)');
+console.log('✅ GamesModule v3.1.0 загружен (полноэкранный режим)');
