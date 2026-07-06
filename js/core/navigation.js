@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation.js
 // Описание: Нижняя навигация с иконками Lucide
-// Версия: 1.9.0 - chat → chat-list
+// Версия: 2.0.0 - ИСПРАВЛЕНО МГНОВЕННОЕ ЗАКРЫТИЕ САЙДБАРА
 // ============================================
 
 class Navigation {
@@ -47,6 +47,7 @@ class Navigation {
         console.log('📱 Навигация инициализирована');
     }
 
+    // ✅ ИСПРАВЛЕНО: МГНОВЕННОЕ ЗАКРЫТИЕ САЙДБАРА
     switchTab(tabId) {
         if (this.activeTab === tabId) {
             console.log(`📱 Уже в разделе ${tabId}, переключение не требуется`);
@@ -64,11 +65,26 @@ class Navigation {
 
         this.setActive(tabId);
 
-        // Закрываем сайдбар если открыт
+        // ✅ Закрываем сайдбар МГНОВЕННО (без анимации)
         const drawer = document.getElementById('drawer');
         const overlay = document.getElementById('drawer-overlay');
         if (drawer?.classList.contains('active')) {
-            window.closeDrawer();
+            console.log('📂 Закрываем сайдбар мгновенно (переключение вкладки)');
+            
+            // ✅ Мгновенное закрытие без анимации
+            drawer.classList.remove('active');
+            drawer.classList.remove('drawer-anim-in');
+            drawer.classList.remove('drawer-anim-out');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            // Обновляем состояние
+            if (window.navigationState) {
+                window.navigationState.toggleDrawer(false);
+            }
+            if (window.eventBus) {
+                window.eventBus.emit('drawer:state_changed', { isOpen: false });
+            }
         }
 
         // Загружаем модуль
@@ -80,9 +96,6 @@ class Navigation {
             this._isSwitching = false;
         }
 
-        // Заголовком управляет модуль — ничего не делаем здесь
-
-        if (window.closeDrawer) window.closeDrawer();
         console.log(`📱 Переключение на: ${tabId}`);
     }
 
@@ -106,4 +119,4 @@ class Navigation {
 
 window.Navigation = Navigation;
 window.navigation = new Navigation();
-console.log('✅ Navigation v1.9.0 загружен (chat → chat-list)');
+console.log('✅ Navigation v2.0.0 загружен (мгновенное закрытие сайдбара)');
