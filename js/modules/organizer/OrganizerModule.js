@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/organizer/OrganizerModule.js
 // Описание: Модуль органайзера с вкладками
-// Версия: 2.3.0 - УБРАНА КНОПКА "СОЗДАТЬ" ИЗ МЕНЮ ДЕЙСТВИЙ
+// Версия: 3.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
 // ============================================
 
 class OrganizerModule {
@@ -11,6 +11,7 @@ class OrganizerModule {
         this._isInFeature = false;
         this._activeTab = 'todo'; // 'todo' | 'reminders' | 'trackers'
         this.headerManager = window.headerManager;
+        this.navigationState = window.navigationState;
     }
 
     async init() {
@@ -137,7 +138,7 @@ class OrganizerModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ OrganizerModule v2.3.0 инициализирован (убрана кнопка "Создать" из меню действий)');
+        console.log('✅ OrganizerModule v3.0.0 инициализирован (убраны ручные кнопки)');
     }
 
     // ==========================================
@@ -349,26 +350,9 @@ class OrganizerModule {
         if (form) {
             form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
         }
-        // При открытии формы трекера — показываем BackButton
-        if (form?.style.display === 'flex') {
-            this._showBackButton();
-            this._isInFeature = true;
-            
-            // ✅ Устанавливаем заголовок для формы
-            if (this.headerManager) {
-                this.headerManager.setTitle('Создание трекера');
-                this.headerManager.setActions([]);
-            }
-        } else {
-            this._hideBackButton();
-            this._isInFeature = false;
-            
-            // ✅ Возвращаем пустой заголовок
-            if (this.headerManager) {
-                this.headerManager.setTitle(null);
-                this.headerManager.setActions([]);
-            }
-        }
+        
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+        // Форма создания трекера — это не навигация, она не должна влиять на кнопку назад
     }
 
     async createTracker() {
@@ -385,15 +369,6 @@ class OrganizerModule {
             titleInput.value = '';
             const form = document.getElementById('organizer-tracker-form');
             if (form) form.style.display = 'none';
-            // Скрываем BackButton после создания
-            this._hideBackButton();
-            this._isInFeature = false;
-            
-            // ✅ Возвращаем пустой заголовок
-            if (this.headerManager) {
-                this.headerManager.setTitle(null);
-                this.headerManager.setActions([]);
-            }
             await this.renderTrackers();
         }
     }
@@ -534,39 +509,8 @@ class OrganizerModule {
         await this.renderTrackers();
     }
 
-    // ==========================================
-    // BACKBUTTON
-    // ==========================================
-
-    _showBackButton() {
-        const tg = window.Telegram?.WebApp;
-        if (!tg?.BackButton) return;
-        
-        tg.BackButton.show();
-        tg.BackButton.offClick();
-        tg.BackButton.onClick(() => {
-            const form = document.getElementById('organizer-tracker-form');
-            if (form) form.style.display = 'none';
-            this._hideBackButton();
-            this._isInFeature = false;
-            
-            // ✅ Возвращаем пустой заголовок
-            if (this.headerManager) {
-                this.headerManager.setTitle(null);
-                this.headerManager.setActions([]);
-            }
-        });
-        console.log('🔙 BackButton показан (органайзер)');
-    }
-
-    _hideBackButton() {
-        const tg = window.Telegram?.WebApp;
-        if (!tg?.BackButton) return;
-        
-        tg.BackButton.hide();
-        tg.BackButton.offClick();
-        console.log('🔙 BackButton скрыт (органайзер)');
-    }
+    // ❌ УДАЛЕНЫ МЕТОДЫ _showBackButton() и _hideBackButton()
+    // Форма создания трекера — это не навигация
 
     // ==========================================
     // УПРАВЛЕНИЕ МОДУЛЕМ
@@ -585,19 +529,8 @@ class OrganizerModule {
             this.headerManager.setActions([]);
         }
         
-        // Если форма трекера открыта — показываем BackButton и заголовок
-        const form = document.getElementById('organizer-tracker-form');
-        if (form?.style.display === 'flex') {
-            this._showBackButton();
-            this._isInFeature = true;
-            if (this.headerManager) {
-                this.headerManager.setTitle('Создание трекера');
-                this.headerManager.setActions([]);
-            }
-        } else {
-            this._hideBackButton();
-            this._isInFeature = false;
-        }
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+        // Органайзер всегда стартовая страница
         
         this.loadTabData(this._activeTab);
         
@@ -607,9 +540,7 @@ class OrganizerModule {
     }
 
     hide() {
-        // Скрываем BackButton при скрытии модуля
-        this._hideBackButton();
-        this._isInFeature = false;
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
         
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
@@ -619,4 +550,4 @@ class OrganizerModule {
 // Экспортируем класс
 window.OrganizerModule = OrganizerModule;
 
-console.log('✅ OrganizerModule v2.3.0 загружен (убрана кнопка "Создать" из меню действий)');
+console.log('✅ OrganizerModule v3.0.0 загружен (убраны ручные кнопки)');
