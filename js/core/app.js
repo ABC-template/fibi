@@ -226,7 +226,7 @@ window.openDrawer = function() {
     drawer.classList.add('drawer-anim-in');
     document.body.style.overflow = 'hidden';
     
-    // ✅ Обновляем состояние навигации (ОБЯЗАТЕЛЬНО!)
+    // ✅ ОБЯЗАТЕЛЬНО обновляем состояние навигации
     if (window.navigationState) {
         window.navigationState.toggleDrawer(true);
     }
