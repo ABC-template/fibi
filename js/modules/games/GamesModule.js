@@ -1,17 +1,20 @@
 // ============================================
 // js/modules/games/GamesModule.js
-// Описание: Модуль игр
-// Версия: 1.3.0 - УПРАВЛЕНИЕ ЗАГОЛОВКОМ ЧЕРЕЗ HEADERMANAGER
+// Описание: Модуль игр (контейнер)
+// Версия: 2.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ, ИНТЕГРАЦИЯ С NAVIGATIONSTATE
 // ============================================
 
 class GamesModule {
     constructor(container) {
         this.container = container;
         this.isInitialized = false;
-        this._isInGame = false;
         this._mode = 'list'; // 'list' | 'game'
+        this._currentGameId = null;
+        this._gameInstance = null;
         this.eventBus = window.eventBus;
         this.headerManager = window.headerManager;
+        this.navigationState = window.navigationState;
+        this._subscriptions = [];
     }
 
     async init() {
@@ -66,7 +69,7 @@ class GamesModule {
                 <div id="game-container" style="display:none; margin-top:16px; background:var(--app-bg-secondary); border-radius:16px; padding:16px; border:1px solid var(--app-border-color-light); min-height:300px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                         <span id="game-title" style="font-weight:700; font-size:16px; color:var(--app-text-primary);">Игра</span>
-                        <button class="btn" style="padding:4px 12px; font-size:11px; border-radius:8px;" onclick="window.gamesModule.closeGame()">✕ Закрыть</button>
+                        <!-- ❌ УДАЛЕНА РУЧНАЯ КНОПКА "✕ Закрыть" -->
                     </div>
                     <div id="game-content" style="display:flex; align-items:center; justify-content:center; min-height:200px; color:var(--app-text-tertiary); font-size:14px;">
                         Выберите игру
@@ -82,8 +85,12 @@ class GamesModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ GamesModule v1.3.0 инициализирован');
+        console.log('✅ GamesModule v2.0.0 инициализирован');
     }
+
+    // ==========================================
+    // ОТКРЫТИЕ ИГРЫ
+    // ==========================================
 
     openGame(gameId) {
         const container = document.getElementById('game-container');
@@ -92,6 +99,7 @@ class GamesModule {
 
         if (!container || !content) return;
 
+        // Показываем контейнер
         container.style.display = 'block';
 
         const games = {
@@ -114,28 +122,45 @@ class GamesModule {
             </div>
         `;
 
-        // ✅ Устанавливаем заголовок и скрываем действия
+        // ✅ Устанавливаем заголовок для игры
         if (this.headerManager) {
             this.headerManager.setTitle(gameName);
             this.headerManager.setActions([]);
         }
 
-        // Обновляем состояние
-        this._isInGame = true;
+        // ✅ Обновляем состояние
         this._mode = 'game';
-        
+        this._currentGameId = gameId;
+
+        // ✅ Сообщаем NavigationState о переходе во внутреннюю страницу
+        if (this.navigationState) {
+            // Навигация остаётся в том же модуле, но с режимом 'game'
+            // NavigationState должен знать, что мы внутри игры
+            this.navigationState._state.params = { 
+                ...this.navigationState._state.params,
+                gameMode: 'game',
+                gameId: gameId
+            };
+            
+            // Отправляем событие об изменении состояния
+            if (this.eventBus) {
+                this.eventBus.emit('navigation:state_changed', { 
+                    ...this.navigationState._state 
+                });
+            }
+        }
+
         // Отправляем событие о смене режима
         if (this.eventBus) {
-            this.eventBus.emit('games:mode_changed', { mode: 'game' }, this);
-        }
-        
-        // Обновляем BackButton
-        if (window.refreshBackButton) {
-            window.refreshBackButton();
+            this.eventBus.emit('games:mode_changed', { mode: 'game', gameId }, this);
         }
 
         console.log('🎮 Игра открыта:', gameId);
     }
+
+    // ==========================================
+    // ЗАКРЫТИЕ ИГРЫ (ВЫЗЫВАЕТСЯ ЧЕРЕЗ NAVIGATIONSTATE)
+    // ==========================================
 
     closeGame() {
         const container = document.getElementById('game-container');
@@ -143,24 +168,34 @@ class GamesModule {
             container.style.display = 'none';
         }
 
-        // ✅ Возвращаем пустой заголовок и скрываем действия
+        // ✅ Возвращаем пустой заголовок
         if (this.headerManager) {
             this.headerManager.setTitle(null);
             this.headerManager.setActions([]);
         }
 
-        // Обновляем состояние
-        this._isInGame = false;
+        // ✅ Обновляем состояние
         this._mode = 'list';
-        
+        this._currentGameId = null;
+
+        // ✅ Сообщаем NavigationState о возврате на стартовую
+        if (this.navigationState) {
+            this.navigationState._state.params = { 
+                ...this.navigationState._state.params,
+                gameMode: 'list',
+                gameId: null
+            };
+            
+            if (this.eventBus) {
+                this.eventBus.emit('navigation:state_changed', { 
+                    ...this.navigationState._state 
+                });
+            }
+        }
+
         // Отправляем событие о смене режима
         if (this.eventBus) {
             this.eventBus.emit('games:mode_changed', { mode: 'list' }, this);
-        }
-        
-        // Обновляем BackButton
-        if (window.refreshBackButton) {
-            window.refreshBackButton();
         }
 
         console.log('🎮 Игра закрыта, возврат в список');
@@ -178,10 +213,15 @@ class GamesModule {
         this.container.style.width = '100%';
         
         // Если игра открыта — показываем заголовок, иначе пусто
-        if (this._isInGame) {
+        if (this._mode === 'game' && this._currentGameId) {
+            const games = {
+                tetris: '🧩 Тетрис',
+                snake: '🐍 Змейка',
+                hangman: '💀 Виселица',
+                chess: '♟️ Шахматы'
+            };
             if (this.headerManager) {
-                const titleEl = document.getElementById('game-title');
-                this.headerManager.setTitle(titleEl?.textContent || 'Игра');
+                this.headerManager.setTitle(games[this._currentGameId] || 'Игра');
                 this.headerManager.setActions([]);
             }
         } else {
@@ -195,27 +235,39 @@ class GamesModule {
             window.navigation.show();
         }
         
-        // Обновляем BackButton
-        if (window.refreshBackButton) {
-            window.refreshBackButton();
-        }
+        // ❌ УДАЛЯЕМ ВЫЗОВ _showBackButton()
+        // Системная кнопка управляется централизованно через NavigationState
     }
 
     hide() {
         // При скрытии модуля сбрасываем состояние
-        this._isInGame = false;
         this._mode = 'list';
+        this._currentGameId = null;
         
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
         
-        // Обновляем BackButton
-        if (window.refreshBackButton) {
-            window.refreshBackButton();
-        }
+        // ❌ УДАЛЯЕМ ВЫЗОВ _hideBackButton()
+        // Системная кнопка управляется централизованно
+    }
+
+    // ==========================================
+    // ПОЛУЧЕНИЕ СОСТОЯНИЯ
+    // ==========================================
+
+    getMode() {
+        return this._mode;
+    }
+
+    getCurrentGameId() {
+        return this._currentGameId;
+    }
+
+    isGameOpen() {
+        return this._mode === 'game';
     }
 }
 
 window.GamesModule = GamesModule;
 
-console.log('✅ GamesModule v1.3.0 загружен (управление заголовком через HeaderManager)');
+console.log('✅ GamesModule v2.0.0 загружен (убраны ручные кнопки, интеграция с NavigationState)');
