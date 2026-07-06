@@ -1,7 +1,7 @@
 // ============================================
 // js/core/modal-manager.js
 // Описание: Универсальный менеджер модалок
-// Версия: 3.0.0 - ИНТЕГРАЦИЯ С navigationState + ПРАВИЛЬНЫЕ КЛИКИ
+// Версия: 3.1.0 - ЗАЩИТА ОТ ВСПЛЫТИЯ + СИНХРОНИЗАЦИЯ
 // ============================================
 
 class ModalManager {
@@ -25,10 +25,6 @@ class ModalManager {
         this._initEvents();
     }
 
-    // ==========================================
-    // ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ
-    // ==========================================
-
     _initEvents() {
         // ✅ Закрытие по крестику
         this.closeBtn.addEventListener('click', (e) => {
@@ -36,35 +32,42 @@ class ModalManager {
             this.close();
         });
 
-        // ✅ Закрытие ТОЛЬКО по клику на оверлей (НЕ на содержимое модалки!)
+        // ✅ Закрытие ТОЛЬКО по клику на оверлей
         this.overlay.addEventListener('click', (e) => {
-            // ⚠️ ВАЖНО: закрываем только если кликнули именно по оверлею, а не по содержимому
             if (e.target === this.overlay) {
                 e.stopPropagation();
                 this.close();
             }
         });
 
-        // ❌ НЕТ обработчиков на modal-body или modal-content!
-        // ❌ НЕТ document.addEventListener с проверкой клика вне модалки!
-        // Клик внутри модалки НЕ должен закрывать её!
+        // ✅ ЗАЩИТА ОТ ВСПЛЫТИЯ: клик по содержимому НЕ закрывает модалку
+        this.content.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        this.title.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        this.body.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        this.footer.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
 
-        // Подписка на событие закрытия через кнопку "Назад"
+        // Подписка на закрытие через кнопку "Назад"
         if (this.eventBus) {
             this.eventBus.on('modal:state_changed', (data) => {
                 if (data && data.action === 'back' && data.isOpen === false) {
-                    // Модалка закрыта через кнопку "Назад"
                     this._handleBackClose();
                 }
             }, this);
         }
 
-        console.log('✅ ModalManager v3.0.0 инициализирован');
+        console.log('✅ ModalManager v3.1.0 инициализирован');
     }
-
-    // ==========================================
-    // ОБРАБОТКА ЗАКРЫТИЯ ЧЕРЕЗ КНОПКУ "НАЗАД"
-    // ==========================================
 
     _handleBackClose() {
         if (this._isOpen && !this._isClosing) {
@@ -72,10 +75,6 @@ class ModalManager {
             this.close();
         }
     }
-
-    // ==========================================
-    // ОТКРЫТИЕ МОДАЛКИ
-    // ==========================================
 
     open(options = {}) {
         const {
@@ -91,29 +90,21 @@ class ModalManager {
         } = options;
 
         this._isClosing = false;
-
-        // Сохраняем колбэки
         this._callbacks = { onOpen, onClose, onSave, onCancel };
         this._modalId = modalId;
 
-        // Запоминаем состояние сайдбара
         const drawer = document.getElementById('drawer');
-        const overlay = document.getElementById('drawer-overlay');
-        
         this._wasDrawerOpen = drawer?.classList.contains('active') || false;
 
-        // Если сайдбар открыт — блокируем его
         if (this._wasDrawerOpen && drawer) {
             drawer.style.pointerEvents = 'none';
             drawer.style.opacity = '0.5';
             document.body.style.overflow = '';
         }
 
-        // Устанавливаем контент
         this.title.textContent = title;
         this.body.innerHTML = content;
 
-        // Футер
         if (showFooter && footer) {
             this.footer.innerHTML = footer;
             this.footer.classList.remove('hidden');
@@ -144,13 +135,11 @@ class ModalManager {
             this.footer.classList.add('hidden');
         }
 
-        // Показываем модалку
         this.modal.style.display = 'flex';
         this.modal.style.visibility = 'visible';
         this.modal.style.opacity = '1';
         this.modal.classList.remove('hidden');
         
-        // Анимация появления
         this.content.style.transition = 'none';
         this.content.style.transform = 'scale(0.95) translateY(20px)';
         this.content.style.opacity = '0';
@@ -163,19 +152,22 @@ class ModalManager {
 
         this._isOpen = true;
 
-        // ✅ Отправляем событие об открытии модалки
+        // ✅ Отправляем событие об открытии
         if (this.eventBus) {
             this.eventBus.emit('modal:open', { modalId: this._modalId });
         }
 
-        // Создаём иконки Lucide внутри модалки
+        // ✅ Синхронизируем с navigationState
+        if (this.navigationState) {
+            this.navigationState.toggleModal(true, this._modalId);
+        }
+
         setTimeout(() => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
         }, 100);
 
-        // Вызываем onOpen
         if (this._callbacks.onOpen) {
             this._callbacks.onOpen();
         }
@@ -183,15 +175,10 @@ class ModalManager {
         console.log(`📱 Модалка открыта: ${title} (id: ${this._modalId})`);
     }
 
-    // ==========================================
-    // ЗАКРЫТИЕ МОДАЛКИ
-    // ==========================================
-
     close() {
         if (this._isClosing || !this._isOpen) return;
         this._isClosing = true;
 
-        // Анимация закрытия
         this.content.style.transition = 'all 0.25s cubic-bezier(0.1, 0.8, 0.25, 1)';
         this.content.style.transform = 'scale(0.95) translateY(20px)';
         this.content.style.opacity = '0';
@@ -202,7 +189,6 @@ class ModalManager {
             this.modal.style.opacity = '0';
             this.modal.classList.add('hidden');
             
-            // Восстанавливаем сайдбар
             const drawer = document.getElementById('drawer');
             if (drawer) {
                 drawer.style.pointerEvents = 'auto';
@@ -214,7 +200,7 @@ class ModalManager {
             this._isOpen = false;
             this._isClosing = false;
 
-            // ✅ Отправляем событие о закрытии модалки
+            // ✅ Отправляем событие о закрытии
             if (this.eventBus) {
                 this.eventBus.emit('modal:close', { 
                     modalId: this._modalId,
@@ -222,27 +208,25 @@ class ModalManager {
                 });
             }
 
-            // Очищаем тело модалки
+            // ✅ Синхронизируем с navigationState
+            if (this.navigationState) {
+                this.navigationState.toggleModal(false, this._modalId);
+            }
+
             this.body.innerHTML = '';
             this.footer.innerHTML = '';
             this.footer.classList.add('hidden');
 
-            // Вызываем onClose
             if (this._callbacks.onClose) {
                 this._callbacks.onClose();
             }
 
-            // Очищаем колбэки
             this._callbacks = {};
             this._modalId = null;
 
             console.log('📱 Модалка закрыта');
         }, 300);
     }
-
-    // ==========================================
-    // ПРОВЕРКА СОСТОЯНИЯ
-    // ==========================================
 
     isOpen() {
         return this._isOpen;
@@ -251,10 +235,6 @@ class ModalManager {
     getModalId() {
         return this._modalId;
     }
-
-    // ==========================================
-    // ОБНОВЛЕНИЕ КОНТЕНТА
-    // ==========================================
 
     updateContent(content) {
         if (this._isOpen) {
@@ -307,10 +287,6 @@ class ModalManager {
         }
     }
 
-    // ==========================================
-    // ПРИНУДИТЕЛЬНОЕ ЗАКРЫТИЕ
-    // ==========================================
-
     forceClose() {
         if (this._isOpen) {
             this.modal.style.display = 'none';
@@ -331,7 +307,6 @@ class ModalManager {
             this.footer.innerHTML = '';
             this.footer.classList.add('hidden');
             this._callbacks = {};
-            this._modalId = null;
             
             if (this.eventBus) {
                 this.eventBus.emit('modal:close', { 
@@ -340,23 +315,23 @@ class ModalManager {
                 });
             }
             
+            if (this.navigationState) {
+                this.navigationState.toggleModal(false, this._modalId);
+            }
+            
+            this._modalId = null;
+            
             console.log('📱 Модалка принудительно закрыта');
         }
     }
 }
 
-// ==========================================
-// СОЗДАЕМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
-// ==========================================
-
 window.ModalManager = ModalManager;
 
-// Проверяем, не создан ли уже экземпляр
 if (!window.modalManager) {
     window.modalManager = new ModalManager();
 }
 
-// Глобальные функции для удобства
 window.showModal = function(options) {
     window.modalManager.open(options);
 };
@@ -365,4 +340,4 @@ window.closeModal = function() {
     window.modalManager.close();
 };
 
-console.log('✅ ModalManager v3.0.0 загружен');
+console.log('✅ ModalManager v3.1.0 загружен');
