@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation-state.js
 // Описание: Единое состояние навигации
-// Версия: 5.0.0 - ПРИОРИТЕТНАЯ ЦЕПОЧКА: модалка → сайдбар → навигация
+// Версия: 5.1.0 - ИСПРАВЛЕНА СИНХРОНИЗАЦИЯ САЙДБАРА И МОДАЛОК
 // ============================================
 
 class NavigationState {
@@ -24,7 +24,7 @@ class NavigationState {
         
         this._subscribe();
         
-        console.log('✅ NavigationState v5.0.0 инициализирован');
+        console.log('✅ NavigationState v5.1.0 инициализирован');
     }
 
     // ==========================================
@@ -74,6 +74,11 @@ class NavigationState {
 
     back() {
         console.log('🔙 NavigationState.back()');
+        console.log('📊 Текущее состояние:', {
+            modalStack: this._state.modalStack,
+            isDrawerOpen: this._state.isDrawerOpen,
+            module: this._state.module
+        });
 
         // ==========================================
         // 1. ПРОВЕРЯЕМ МОДАЛКИ (самая верхняя)
@@ -269,6 +274,27 @@ class NavigationState {
         const isOpen = open !== undefined ? open : !this._state.isDrawerOpen;
         this._state.isDrawerOpen = isOpen;
         
+        // ✅ Если сайдбар открыт — обновляем физическое состояние
+        if (isOpen) {
+            // Убеждаемся, что сайдбар физически открыт
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            if (drawer && overlay) {
+                drawer.classList.add('active');
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        } else {
+            // Убеждаемся, что сайдбар физически закрыт
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            if (drawer && overlay) {
+                drawer.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
         // Обновляем кнопку
         this._updateBackButton();
         
@@ -301,7 +327,7 @@ class NavigationState {
             this._updateBackButton();
             
         } else {
-            // Открываем
+            // Открываем — добавляем в стек, если ещё нет
             if (!this._state.modalStack.includes(modalId)) {
                 this._state.modalStack.push(modalId);
             }
@@ -408,6 +434,12 @@ class NavigationState {
             this.openProfile();
         });
 
+        // ✅ Синхронизируем состояние сайдбара с DOM
+        this.eventBus.on('drawer:state_changed', (data) => {
+            this._state.isDrawerOpen = data.isOpen;
+            this._updateBackButton();
+        });
+
         console.log('📡 NavigationState подписан на события');
     }
 }
@@ -432,4 +464,4 @@ if (document.readyState === 'loading') {
     }
 }
 
-console.log('✅ NavigationState v5.0.0 загружен');
+console.log('✅ NavigationState v5.1.0 загружен');
