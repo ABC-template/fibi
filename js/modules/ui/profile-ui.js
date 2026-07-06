@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/ui/profile-ui.js
 // Описание: Работа с модалками (Избранное, Корзина)
-// Версия: 5.0.0 - ПОЛНАЯ ИНТЕГРАЦИЯ С navigationState
+// Версия: 5.1.0 - ИСПРАВЛЕНА РАБОТА С МОДАЛКАМИ И САЙДБАРОМ
 // ============================================
 
 class ProfileUI {
@@ -51,12 +51,20 @@ class ProfileUI {
     showFavoritesModal() {
         const content = this._renderFavoritesContent();
         
+        // ✅ Регистрируем модалку в navigationState
+        if (this.navigationState) {
+            this.navigationState.toggleModal(true, 'favorites');
+        }
+        
         window.showModal({
             title: '⭐ Избранное',
             content: content,
             modalId: 'favorites',
             onClose: () => {
-                // При закрытии модалки ничего не делаем
+                // ✅ Закрываем модалку через navigationState
+                if (this.navigationState) {
+                    this.navigationState.toggleModal(false, 'favorites');
+                }
             }
         });
     }
@@ -134,8 +142,19 @@ class ProfileUI {
             window.modalManager.close();
         }
         
-        // ✅ 2. Закрываем сайдбар (если открыт) — navigationState сделает это автоматически
-        // ✅ 3. Открываем чат
+        // ✅ 2. Закрываем сайдбар (если открыт)
+        if (this.navigationState && this.navigationState._state.isDrawerOpen) {
+            this.navigationState.toggleDrawer(false);
+        } else {
+            // Fallback: физически закрываем
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            if (drawer?.classList.contains('active')) {
+                window.closeDrawer();
+            }
+        }
+        
+        // ✅ 3. Открываем чат через навигацию
         if (this.navigationState) {
             this.navigationState.openChat(chatId, topic);
         } else if (this.eventBus) {
@@ -178,6 +197,11 @@ class ProfileUI {
     showTrashModal() {
         const content = this._renderTrashContent();
         
+        // ✅ Регистрируем модалку в navigationState
+        if (this.navigationState) {
+            this.navigationState.toggleModal(true, 'trash');
+        }
+        
         window.showModal({
             title: '🗑️ Корзина',
             content: content,
@@ -190,6 +214,12 @@ class ProfileUI {
             showFooter: true,
             onSave: () => {
                 this._clearAllTrash();
+            },
+            onClose: () => {
+                // ✅ Закрываем модалку через navigationState
+                if (this.navigationState) {
+                    this.navigationState.toggleModal(false, 'trash');
+                }
             }
         });
     }
@@ -356,6 +386,11 @@ class ProfileUI {
         const chat = found.chat;
         const currentValue = chat.maxContext || 15;
         
+        // ✅ Регистрируем модалку в navigationState
+        if (this.navigationState) {
+            this.navigationState.toggleModal(true, 'context');
+        }
+        
         const content = `
             <div style="padding:4px 0;">
                 <p style="font-size:13px;color:var(--app-text-secondary);margin:0 0 12px 0;line-height:1.5;">
@@ -402,6 +437,12 @@ class ProfileUI {
                 if (slider) {
                     const newValue = parseInt(slider.value, 10);
                     this._saveChatContext(chatId, newValue);
+                }
+            },
+            onClose: () => {
+                // ✅ Закрываем модалку через navigationState
+                if (this.navigationState) {
+                    this.navigationState.toggleModal(false, 'context');
                 }
             }
         });
@@ -487,4 +528,4 @@ window.showContextModal = function(chatId) {
     }
 };
 
-console.log('✅ ProfileUI v5.0.0 загружен');
+console.log('✅ ProfileUI v5.1.0 загружен');
