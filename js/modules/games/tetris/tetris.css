@@ -295,3 +295,132 @@
         display: none;
     }
 }
+/* ============================================
+   ПОЛНОЭКРАННЫЙ РЕЖИМ ДЛЯ ИГР
+   ============================================ */
+
+.game-fullscreen {
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.game-fullscreen #app-screen {
+    padding-top: 0 !important;
+}
+
+.game-fullscreen #header {
+    display: none !important;
+}
+
+.game-fullscreen #bottom-nav {
+    display: none !important;
+}
+
+.game-fullscreen #game-container {
+    border-radius: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+/* Адаптация Тетриса под полный экран */
+.game-fullscreen .tetris-container {
+    max-width: 100% !important;
+    padding: 4px !important;
+    justify-content: center !important;
+    height: 100dvh !important;
+    gap: 6px !important;
+}
+
+.game-fullscreen .tetris-game-wrapper {
+    flex: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.game-fullscreen .tetris-board {
+    max-width: 100% !important;
+}
+
+.game-fullscreen .tetris-cell {
+    width: calc((100vw - 60px) / 10) !important;
+    height: calc((100vw - 60px) / 10) !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+}
+
+.game-fullscreen .tetris-touch-controls {
+    display: grid !important;
+    max-width: 320px !important;
+    margin-bottom: 4px !important;
+}
+
+.game-fullscreen .tetris-controls {
+    margin-bottom: 4px !important;
+}
+
+.game-fullscreen .tetris-info {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 4px 12px !important;
+    min-width: unset !important;
+    width: auto !important;
+}
+
+.game-fullscreen .tetris-info-item {
+    font-size: 11px !important;
+}
+
+.game-fullscreen .tetris-preview {
+    padding: 4px 8px !important;
+    min-width: 70px !important;
+}
+
+.game-fullscreen .tetris-preview-cell {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+.game-fullscreen .tetris-overlay h3 {
+    font-size: 28px !important;
+}
+
+.game-fullscreen .tetris-overlay .score {
+    font-size: 24px !important;
+}
+
+/* Адаптация под разные размеры экрана */
+@media (max-width: 420px) {
+    .game-fullscreen .tetris-cell {
+        width: calc((100vw - 40px) / 10) !important;
+        height: calc((100vw - 40px) / 10) !important;
+        max-width: 30px !important;
+        max-height: 30px !important;
+        min-width: 14px !important;
+        min-height: 14px !important;
+    }
+    
+    .game-fullscreen .tetris-touch-controls {
+        max-width: 240px !important;
+        gap: 4px !important;
+    }
+    
+    .game-fullscreen .tetris-touch-btn {
+        font-size: 16px !important;
+        min-height: 38px !important;
+        padding: 6px !important;
+    }
+}
+
+@media (min-width: 600px) {
+    .game-fullscreen .tetris-cell {
+        width: 38px !important;
+        height: 38px !important;
+        max-width: 44px !important;
+        max-height: 44px !important;
+    }
+}
