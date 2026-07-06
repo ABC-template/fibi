@@ -1,7 +1,7 @@
 // ============================================
 // js/core/back-button-manager.js
 // Описание: Управление системной кнопкой «Назад» Telegram
-// Версия: 5.0.0 - ПРИОРИТЕТ: модалка → сайдбар → навигация
+// Версия: 5.1.0 - ПОДДЕРЖКА ИГР
 // ============================================
 
 class BackButtonManager {
@@ -45,10 +45,14 @@ class BackButtonManager {
         }, this);
         this._subscriptions.push(unsubDrawer);
 
-        // ❌ НЕ ПОДПИСЫВАЕМСЯ НА МОДАЛКИ (они не влияют на показ/скрытие)
-        // Но подписываемся на закрытие модалок через кнопку "Назад"
+        // Подписка на состояние игр
+        const unsubGames = this.eventBus.on('games:mode_changed', () => {
+            this._update();
+        }, this);
+        this._subscriptions.push(unsubGames);
+
+        // Подписка на закрытие модалок через кнопку "Назад"
         const unsubModalBack = this.eventBus.on('modal:state_changed', (data) => {
-            // Если модалка закрыта через кнопку "Назад" — обновляем состояние
             if (data && data.action === 'back') {
                 this._update();
             }
@@ -64,7 +68,7 @@ class BackButtonManager {
         // Первоначальное обновление
         setTimeout(() => this._update(), 100);
 
-        console.log('✅ BackButtonManager v5.0.0 инициализирован');
+        console.log('✅ BackButtonManager v5.1.0 инициализирован');
     }
 
     // ==========================================
@@ -84,6 +88,12 @@ class BackButtonManager {
     _shouldShow() {
         if (!this.navigationState) {
             return false;
+        }
+
+        // ✅ Проверяем, открыта ли игра
+        const gamesModule = window.gamesModule;
+        if (gamesModule && gamesModule.isGameOpen()) {
+            return true;
         }
 
         // ✅ Модалки НЕ ВЛИЯЮТ на кнопку!
@@ -126,6 +136,14 @@ class BackButtonManager {
 
     _handleBackPress() {
         console.log('🔙 BackButton нажат');
+
+        // ✅ Если открыта игра — закрываем её
+        const gamesModule = window.gamesModule;
+        if (gamesModule && gamesModule.isGameOpen()) {
+            console.log('🎮 Закрываем игру через BackButton');
+            gamesModule.closeGame();
+            return;
+        }
 
         if (this.navigationState) {
             this.navigationState.back();
@@ -189,4 +207,4 @@ window.refreshBackButton = function() {
     }
 };
 
-console.log('✅ BackButtonManager v5.0.0 загружен');
+console.log('✅ BackButtonManager v5.1.0 загружен (поддержка игр)');
