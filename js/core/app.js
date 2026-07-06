@@ -1,10 +1,10 @@
 // ============================================
 // js/core/app.js
 // Описание: Инициализация приложения
-// Версия: 7.1.0 - ИСПРАВЛЕНА СИНХРОНИЗАЦИЯ САЙДБАРА
+// Версия: 7.2.0 - ИСПРАВЛЕНА АНИМАЦИЯ САЙДБАРА
 // ============================================
 
-console.log('🚀 App v7.1.0 начал загрузку');
+console.log('🚀 App v7.2.0 начал загрузку');
 
 // ==========================================
 // ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
@@ -60,7 +60,7 @@ function showTelegramRequiredScreen() {
                     📲 Открыть в Telegram
                 </a>
                 <div style="margin-top: 24px; font-size: 12px; color: var(--app-text-tertiary, #A89880);">
-                    Версия 7.1.0
+                    Версия 7.2.0
                 </div>
             </div>
         `;
@@ -206,7 +206,7 @@ window.fullDataReload = async function() {
 };
 
 // ==========================================
-// УПРАВЛЕНИЕ САЙДБАРОМ (ИСПРАВЛЕНО!)
+// УПРАВЛЕНИЕ САЙДБАРОМ (ИСПРАВЛЕНО! v7.2.0)
 // ==========================================
 
 window.openDrawer = function() {
@@ -220,6 +220,8 @@ window.openDrawer = function() {
     
     renderChatsInDrawer();
     updateDrawerCoins();
+    
+    // ✅ Сразу показываем сайдбар и оверлей
     overlay.classList.add('active');
     drawer.classList.add('active');
     drawer.classList.remove('drawer-anim-out');
@@ -236,12 +238,24 @@ window.openDrawer = function() {
     }
 };
 
-window.closeDrawer = function() {
+window.closeDrawer = function(options = {}) {
+    const { instant = false } = options;
     const overlay = document.getElementById('drawer-overlay');
     const drawer = document.getElementById('drawer');
     if (!overlay || !drawer) return;
     
-    // ✅ Сначала обновляем состояние
+    // ✅ 1. СРАЗУ убираем класс active (кнопка скроется мгновенно)
+    drawer.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // ✅ 2. Добавляем анимацию для плавного исчезновения (если не instant)
+    drawer.classList.remove('drawer-anim-in');
+    if (!instant) {
+        drawer.classList.add('drawer-anim-out');
+    }
+    
+    // ✅ 3. Обновляем состояние навигации
     if (window.navigationState) {
         window.navigationState.toggleDrawer(false);
     }
@@ -250,16 +264,14 @@ window.closeDrawer = function() {
         window.eventBus.emit('drawer:state_changed', { isOpen: false });
     }
     
-    // ✅ Затем физически закрываем с анимацией
-    drawer.classList.remove('drawer-anim-in');
-    drawer.classList.add('drawer-anim-out');
-    setTimeout(() => {
-        drawer.classList.remove('active');
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-        // Убираем класс анимации после завершения
+    // ✅ 4. Убираем класс анимации после завершения
+    if (!instant) {
+        setTimeout(() => {
+            drawer.classList.remove('drawer-anim-out');
+        }, 300);
+    } else {
         drawer.classList.remove('drawer-anim-out');
-    }, 300);
+    }
 };
 
 document.addEventListener('click', function(e) {
@@ -636,7 +648,7 @@ function appendDrawerNav(container) {
         <div class="drawer-nav-item" id="drawer-clear-cache" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; color: var(--app-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--app-font-family, -apple-system, sans-serif); -webkit-tap-highlight-color: transparent;">
             <i data-lucide="trash" style="width:20px;height:20px;"></i> Очистить кэш
         </div>
-        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.1.0</div>
+        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.2.0</div>
     `;
     
     container.appendChild(nav);
@@ -1345,7 +1357,7 @@ async function initApp() {
     const currentTheme = window.themeManager?.getCurrentTheme() || 'light';
     updateThemeLabel(currentTheme);
 
-    console.log('✅ Приложение v7.1.0 успешно загружено');
+    console.log('✅ Приложение v7.2.0 успешно загружено');
 }
 
 // ==========================================
@@ -1411,4 +1423,4 @@ setTimeout(initLucideIcons, 300);
 window.addEventListener('load', initLucideIcons);
 setTimeout(initLucideIcons, 1000);
 
-console.log('✅ app.js v7.1.0 полностью загружен');
+console.log('✅ app.js v7.2.0 полностью загружен');
