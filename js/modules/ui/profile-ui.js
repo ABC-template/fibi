@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/ui/profile-ui.js
 // Описание: Работа с модалками (Избранное, Корзина)
-// Версия: 4.0.0 - ИСПОЛЬЗУЕТ НОВУЮ НАВИГАЦИЮ
+// Версия: 4.0.1 - ИСПРАВЛЕН КОНФЛИКТ ПЕРЕМЕННЫХ
 // ============================================
 
 class ProfileUI {
@@ -117,22 +117,21 @@ class ProfileUI {
     }
 
     // ==========================================
-    // ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО (С АВТОЗАКРЫТИЕМ МОДАЛКИ И САЙДБАРА)
+    // ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО
     // ==========================================
 
     _openChatFromFavorite(chatId, topic, msgId) {
         console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}, сообщение: ${msgId}`);
         
-        // ✅ Закрываем модалку
+        // Закрываем модалку
         if (this.navigationState) {
             this.navigationState.toggleModal(false);
         } else if (window.modalManager) {
             window.modalManager.close();
         }
         
-        // ✅ Закрываем сайдбар (если открыт) через navigationState
+        // Открываем чат (сайдбар закроется автоматически)
         if (this.navigationState) {
-            // openChat сам закроет сайдбар
             this.navigationState.openChat(chatId, topic);
         } else if (this.eventBus) {
             this.eventBus.emit('navigation:open_chat', { chatId, topic });
@@ -140,7 +139,7 @@ class ProfileUI {
             window.openChat(chatId, topic);
         }
         
-        // ✅ После открытия скроллим к сообщению
+        // Скроллим к сообщению
         setTimeout(() => {
             const target = document.getElementById(`msg-block-${msgId}`);
             const container = document.getElementById('chat-container');
@@ -149,8 +148,6 @@ class ProfileUI {
                 target.style.transition = 'background 0.5s';
                 target.style.background = 'rgba(212,175,55,0.15)';
                 setTimeout(() => target.style.background = '', 1500);
-            } else {
-                console.warn(`⚠️ Не найден блок сообщения ${msgId} или контейнер чата`);
             }
         }, 500);
     }
@@ -439,15 +436,14 @@ class ProfileUI {
 }
 
 // ==========================================
-// СОЗДАЁМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
+// СОЗДАЁМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР (с уникальным именем)
 // ==========================================
 
 window.ProfileUI = ProfileUI;
 
-// Ждём navigationState
-const checkInterval = setInterval(() => {
+let _puiCheckInterval = setInterval(() => {
     if (window.navigationState) {
-        clearInterval(checkInterval);
+        clearInterval(_puiCheckInterval);
         if (!window.profileUI) {
             window.profileUI = new ProfileUI();
             console.log('✅ ProfileUI создан');
@@ -484,4 +480,4 @@ window.showContextModal = function(chatId) {
     }
 };
 
-console.log('✅ ProfileUI v4.0.0 загружен (новая навигация)');
+console.log('✅ ProfileUI v4.0.1 загружен (исправлен конфликт переменных)');
