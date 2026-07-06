@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation-state.js
-// Описание: Единое состояние навигации 
-// Версия: 4.0.0 - НОВАЯ ЛОГИКА КНОПКИ НАЗАД
+// Описание: Единое состояние навигации
+// Версия: 5.0.0 - ПРИОРИТЕТНАЯ ЦЕПОЧКА: модалка → сайдбар → навигация
 // ============================================
 
 class NavigationState {
@@ -24,7 +24,7 @@ class NavigationState {
         
         this._subscribe();
         
-        console.log('✅ NavigationState v4.0.0 инициализирован');
+        console.log('✅ NavigationState v5.0.0 инициализирован');
     }
 
     // ==========================================
@@ -44,53 +44,78 @@ class NavigationState {
     }
 
     // ==========================================
-    // ✅ НОВАЯ ЛОГИКА: НУЖНО ЛИ ПОКАЗЫВАТЬ КНОПКУ НАЗАД?
+    // НУЖНО ЛИ ПОКАЗЫВАТЬ КНОПКУ НАЗАД?
     // ==========================================
 
     shouldShowBackButton() {
         // 1. Сайдбар открыт → ДА
         if (this._state.isDrawerOpen) {
-            console.log('🔙 shouldShowBackButton: ДА (сайдбар открыт)');
             return true;
         }
 
         // 2. Чат открыт → ДА
         if (this._state.module === 'chat') {
-            console.log('🔙 shouldShowBackButton: ДА (чат открыт)');
             return true;
         }
 
         // 3. Профиль открыт → ДА
         if (this._state.module === 'profile') {
-            console.log('🔙 shouldShowBackButton: ДА (профиль открыт)');
             return true;
         }
 
-        // 4. Всё остальное → НЕТ
-        console.log('🔙 shouldShowBackButton: НЕТ (корневой модуль)');
+        // 4. Всё остальное → НЕТ (модалки НЕ ВЛИЯЮТ!)
         return false;
     }
 
     // ==========================================
     // ОБРАБОТКА НАЖАТИЯ КНОПКИ НАЗАД
+    // ✅ ПРИОРИТЕТ: модалка → сайдбар → навигация
     // ==========================================
 
     back() {
         console.log('🔙 NavigationState.back()');
 
-        // 1. Если сайдбар открыт → закрываем его
+        // ==========================================
+        // 1. ПРОВЕРЯЕМ МОДАЛКИ (самая верхняя)
+        // ==========================================
+        if (this._state.modalStack.length > 0) {
+            const lastModal = this._state.modalStack.pop();
+            console.log(`📱 Закрываем модалку: ${lastModal}`);
+            
+            // Отправляем событие о закрытии модалки
+            this._emit('modal:state_changed', { 
+                isOpen: this._state.modalStack.length > 0,
+                modalId: lastModal,
+                action: 'back'
+            });
+            
+            // Если модалок больше нет — обновляем кнопку
+            if (this._state.modalStack.length === 0) {
+                this._state.isModalOpen = false;
+                this._updateBackButton();
+            }
+            return;
+        }
+
+        // ==========================================
+        // 2. ПРОВЕРЯЕМ САЙДБАР
+        // ==========================================
         if (this._state.isDrawerOpen) {
             this.toggleDrawer(false);
             return;
         }
 
-        // 2. Если чат открыт → возвращаемся в список чатов
+        // ==========================================
+        // 3. ПРОВЕРЯЕМ МОДУЛИ
+        // ==========================================
+        
+        // Чат → список чатов
         if (this._state.module === 'chat') {
             this.goToChatList();
             return;
         }
 
-        // 3. Если профиль открыт → возвращаемся в предыдущий модуль
+        // Профиль → предыдущий модуль или список чатов
         if (this._state.module === 'profile') {
             if (this._state.history.length > 0) {
                 const prev = this._state.history.pop();
@@ -101,7 +126,9 @@ class NavigationState {
             return;
         }
 
-        // 4. Иначе → используем историю или возвращаемся на главную
+        // ==========================================
+        // 4. ИСТОРИЯ ИЛИ ГЛАВНАЯ
+        // ==========================================
         if (this._state.history.length > 0) {
             const prev = this._state.history.pop();
             this.navigate(prev.module, prev.params, { replace: true });
@@ -182,7 +209,7 @@ class NavigationState {
                 this._emit();
             }
             
-            // ✅ ОБНОВЛЯЕМ КНОПКУ НАЗАД ПОСЛЕ НАВИГАЦИИ
+            // Обновляем кнопку
             this._updateBackButton();
             
             console.log(`🧭 Навигация завершена: ${module}`, params);
@@ -195,7 +222,7 @@ class NavigationState {
     }
 
     // ==========================================
-    // ОТКРЫТИЕ ЧАТА (С АВТОЗАКРЫТИЕМ САЙДБАРА)
+    // ОТКРЫТИЕ ЧАТА (с закрытием сайдбара)
     // ==========================================
 
     openChat(chatId, topic) {
@@ -219,7 +246,7 @@ class NavigationState {
     }
 
     // ==========================================
-    // ОТКРЫТИЕ ПРОФИЛЯ (С АВТОЗАКРЫТИЕМ САЙДБАРА)
+    // ОТКРЫТИЕ ПРОФИЛЯ (с закрытием сайдбара)
     // ==========================================
 
     openProfile() {
@@ -242,7 +269,7 @@ class NavigationState {
         const isOpen = open !== undefined ? open : !this._state.isDrawerOpen;
         this._state.isDrawerOpen = isOpen;
         
-        // ✅ ОБНОВЛЯЕМ КНОПКУ НАЗАД
+        // Обновляем кнопку
         this._updateBackButton();
         
         this._emit('drawer:state_changed', { isOpen });
@@ -250,26 +277,49 @@ class NavigationState {
     }
 
     // ==========================================
-    // УПРАВЛЕНИЕ МОДАЛКАМИ (НЕ ВЛИЯЮТ НА КНОПКУ)
+    // УПРАВЛЕНИЕ МОДАЛКАМИ
     // ==========================================
 
     toggleModal(open, modalId = 'default') {
         if (open === false) {
+            // Закрываем
             if (this._state.modalStack.length > 0) {
-                this._state.modalStack.pop();
+                const lastModal = this._state.modalStack.pop();
+                console.log(`📱 Закрыта модалка: ${lastModal}`);
             }
+            
             const isOpen = this._state.modalStack.length > 0;
             this._state.isModalOpen = isOpen;
-            this._emit('modal:state_changed', { isOpen, modalId });
+            
+            this._emit('modal:state_changed', { 
+                isOpen, 
+                modalId: modalId || 'default',
+                action: 'close'
+            });
+            
+            // ✅ Модалки НЕ ВЛИЯЮТ на кнопку, но обновляем на всякий случай
+            this._updateBackButton();
+            
         } else {
-            this._state.modalStack.push(modalId);
+            // Открываем
+            if (!this._state.modalStack.includes(modalId)) {
+                this._state.modalStack.push(modalId);
+            }
             this._state.isModalOpen = true;
-            this._emit('modal:state_changed', { isOpen: true, modalId });
+            
+            this._emit('modal:state_changed', { 
+                isOpen: true, 
+                modalId,
+                action: 'open'
+            });
+            
+            // ✅ Модалки НЕ ВЛИЯЮТ на кнопку, но обновляем на всякий случай
+            this._updateBackButton();
         }
     }
 
     // ==========================================
-    // ✅ ОБНОВЛЕНИЕ КНОПКИ НАЗАД
+    // ОБНОВЛЕНИЕ КНОПКИ НАЗАД
     // ==========================================
 
     _updateBackButton() {
@@ -281,8 +331,6 @@ class NavigationState {
             } else {
                 window.backButtonManager.hide();
             }
-        } else {
-            console.warn('⚠️ backButtonManager не найден');
         }
     }
 
@@ -302,7 +350,7 @@ class NavigationState {
     }
 
     get canGoBack() {
-        return this.shouldShowBackButton();
+        return this.shouldShowBackButton() || this._state.modalStack.length > 0;
     }
 
     get currentModule() {
@@ -340,6 +388,7 @@ class NavigationState {
             this.toggleDrawer(data.open);
         });
 
+        // ✅ Модальные события
         this.eventBus.on('modal:open', (data) => {
             this.toggleModal(true, data.modalId || 'default');
         });
@@ -348,7 +397,13 @@ class NavigationState {
             this.toggleModal(false, data.modalId || 'default');
         });
 
-        // ✅ Подписка на открытие профиля
+        // ✅ Событие для закрытия модалки через кнопку "Назад"
+        this.eventBus.on('modal:back', (data) => {
+            if (this._state.modalStack.length > 0) {
+                this.back();
+            }
+        });
+
         this.eventBus.on('navigation:open_profile', () => {
             this.openProfile();
         });
@@ -377,4 +432,4 @@ if (document.readyState === 'loading') {
     }
 }
 
-console.log('✅ NavigationState v4.0.0 загружен');
+console.log('✅ NavigationState v5.0.0 загружен');
