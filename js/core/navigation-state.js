@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation-state.js
 // Описание: Единое состояние навигации
-// Версия: 5.2.0 - ФИЗИЧЕСКАЯ ПРОВЕРКА САЙДБАРА
+// Версия: 5.3.0 - ГАРАНТИРОВАННОЕ ЗАКРЫТИЕ САЙДБАРА
 // ============================================
 
 class NavigationState {
@@ -23,7 +23,7 @@ class NavigationState {
         
         this._subscribe();
         
-        console.log('✅ NavigationState v5.2.0 инициализирован');
+        console.log('✅ NavigationState v5.3.0 инициализирован');
     }
 
     get moduleLoader() {
@@ -34,7 +34,7 @@ class NavigationState {
     }
 
     shouldShowBackButton() {
-        // ✅ ФИЗИЧЕСКАЯ ПРОВЕРКА сайдбара
+        // Физическая проверка сайдбара
         const drawer = document.getElementById('drawer');
         const isDrawerPhysicallyOpen = drawer?.classList.contains('active') || false;
         
@@ -53,6 +53,7 @@ class NavigationState {
         return false;
     }
 
+    // ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ
     back() {
         console.log('🔙 NavigationState.back()');
         
@@ -74,13 +75,37 @@ class NavigationState {
             return;
         }
 
-        // 2. ✅ ФИЗИЧЕСКАЯ ПРОВЕРКА сайдбара
+        // 2. ✅ ГАРАНТИРОВАННО закрываем сайдбар
         const drawer = document.getElementById('drawer');
+        const overlay = document.getElementById('drawer-overlay');
         const isDrawerPhysicallyOpen = drawer?.classList.contains('active') || false;
         
         if (isDrawerPhysicallyOpen || this._state.isDrawerOpen) {
-            console.log('📂 Закрываем сайдбар (физическая проверка)');
-            this.toggleDrawer(false);
+            console.log('📂 Закрываем сайдбар (физически)');
+            
+            // Физическое закрытие
+            if (drawer) {
+                drawer.classList.remove('active');
+                drawer.classList.remove('drawer-anim-in');
+                drawer.classList.add('drawer-anim-out');
+            }
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+            document.body.style.overflow = '';
+            
+            // Обновляем состояние
+            this._state.isDrawerOpen = false;
+            this._updateBackButton();
+            this._emit('drawer:state_changed', { isOpen: false });
+            
+            // Убираем класс анимации после завершения
+            setTimeout(() => {
+                if (drawer) {
+                    drawer.classList.remove('drawer-anim-out');
+                }
+            }, 300);
+            
             return;
         }
 
@@ -187,7 +212,6 @@ class NavigationState {
     openChat(chatId, topic) {
         console.log(`📂 NavigationState.openChat: ${chatId}, ${topic}`);
         
-        // ✅ Закрываем сайдбар
         if (this._state.isDrawerOpen) {
             this.toggleDrawer(false);
         }
@@ -370,4 +394,4 @@ if (document.readyState === 'loading') {
     }
 }
 
-console.log('✅ NavigationState v5.2.0 загружен');
+console.log('✅ NavigationState v5.3.0 загружен');
