@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/ui/profile-ui.js
 // Описание: Работа с модалками (Избранное, Корзина)
-// Версия: 5.1.0 - ИСПРАВЛЕНА РАБОТА С МОДАЛКАМИ И САЙДБАРОМ
+// Версия: 5.2.0 - ГАРАНТИРОВАННОЕ ЗАКРЫТИЕ
 // ============================================
 
 class ProfileUI {
@@ -14,10 +14,6 @@ class ProfileUI {
         
         this._subscribeToEvents();
     }
-
-    // ==========================================
-    // ПОДПИСКИ
-    // ==========================================
 
     _subscribeToEvents() {
         const unsubFav = this.eventBus.on('chat:favorite_toggled', () => {
@@ -44,14 +40,9 @@ class ProfileUI {
         console.log('📡 ProfileUI подписан на события');
     }
 
-    // ==========================================
-    // ИЗБРАННОЕ (через модалку)
-    // ==========================================
-
     showFavoritesModal() {
         const content = this._renderFavoritesContent();
         
-        // ✅ Регистрируем модалку в navigationState
         if (this.navigationState) {
             this.navigationState.toggleModal(true, 'favorites');
         }
@@ -61,7 +52,6 @@ class ProfileUI {
             content: content,
             modalId: 'favorites',
             onClose: () => {
-                // ✅ Закрываем модалку через navigationState
                 if (this.navigationState) {
                     this.navigationState.toggleModal(false, 'favorites');
                 }
@@ -127,25 +117,33 @@ class ProfileUI {
         return html;
     }
 
-    // ==========================================
-    // ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО
-    // ✅ Закрываем модалку → закрываем сайдбар → открываем чат
-    // ==========================================
-
+    // ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: гарантированное закрытие
     _openChatFromFavorite(chatId, topic, msgId) {
-        console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}, сообщение: ${msgId}`);
+        console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}`);
         
-        // ✅ 1. ФИЗИЧЕСКИ закрываем модалку
+        // ✅ 1. ФИЗИЧЕСКИ закрываем модалку (forceClose - мгновенно)
         if (window.modalManager) {
-            window.modalManager.close();
+            window.modalManager.forceClose();
         }
         
         // ✅ 2. ФИЗИЧЕСКИ закрываем сайдбар
-        if (window.closeDrawer) {
-            window.closeDrawer();
+        const drawer = document.getElementById('drawer');
+        const overlay = document.getElementById('drawer-overlay');
+        if (drawer?.classList.contains('active')) {
+            drawer.classList.remove('active');
+            overlay?.classList.remove('active');
+            document.body.style.overflow = '';
         }
         
-        // ✅ 3. Открываем чат через навигацию
+        // ✅ 3. Обновляем состояние navigationState
+        if (this.navigationState) {
+            this.navigationState._state.isDrawerOpen = false;
+            this.navigationState._state.modalStack = [];
+            this.navigationState._state.isModalOpen = false;
+            this.navigationState._updateBackButton();
+        }
+        
+        // ✅ 4. Открываем чат
         if (this.navigationState) {
             this.navigationState.openChat(chatId, topic);
         } else if (this.eventBus) {
@@ -154,7 +152,7 @@ class ProfileUI {
             window.openChat(chatId, topic);
         }
         
-        // ✅ 4. Скроллим к сообщению
+        // ✅ 5. Скролл к сообщению
         setTimeout(() => {
             const target = document.getElementById(`msg-block-${msgId}`);
             const container = document.getElementById('chat-container');
@@ -181,14 +179,9 @@ class ProfileUI {
         }
     }
 
-    // ==========================================
-    // КОРЗИНА (через модалку)
-    // ==========================================
-
     showTrashModal() {
         const content = this._renderTrashContent();
         
-        // ✅ Регистрируем модалку в navigationState
         if (this.navigationState) {
             this.navigationState.toggleModal(true, 'trash');
         }
@@ -207,7 +200,6 @@ class ProfileUI {
                 this._clearAllTrash();
             },
             onClose: () => {
-                // ✅ Закрываем модалку через navigationState
                 if (this.navigationState) {
                     this.navigationState.toggleModal(false, 'trash');
                 }
@@ -363,10 +355,6 @@ class ProfileUI {
         }
     }
 
-    // ==========================================
-    // ПАМЯТЬ ЧАТА (контекст)
-    // ==========================================
-
     showContextModal(chatId) {
         const found = this.chatStore.findChatById(chatId);
         if (!found) {
@@ -377,7 +365,6 @@ class ProfileUI {
         const chat = found.chat;
         const currentValue = chat.maxContext || 15;
         
-        // ✅ Регистрируем модалку в navigationState
         if (this.navigationState) {
             this.navigationState.toggleModal(true, 'context');
         }
@@ -431,7 +418,6 @@ class ProfileUI {
                 }
             },
             onClose: () => {
-                // ✅ Закрываем модалку через navigationState
                 if (this.navigationState) {
                     this.navigationState.toggleModal(false, 'context');
                 }
@@ -457,10 +443,6 @@ class ProfileUI {
         }
     }
 
-    // ==========================================
-    // ОЧИСТКА
-    // ==========================================
-
     destroy() {
         for (const unsub of this._subscriptions) {
             try {
@@ -473,10 +455,6 @@ class ProfileUI {
         console.log('📡 ProfileUI отписан от событий');
     }
 }
-
-// ==========================================
-// СОЗДАЁМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
-// ==========================================
 
 window.ProfileUI = ProfileUI;
 
@@ -497,10 +475,6 @@ setTimeout(() => {
     }
 }, 3000);
 
-// ==========================================
-// ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ МОДАЛОК
-// ==========================================
-
 window.showFavoritesModal = function() {
     if (window.profileUI && typeof window.profileUI.showFavoritesModal === 'function') {
         window.profileUI.showFavoritesModal();
@@ -519,4 +493,4 @@ window.showContextModal = function(chatId) {
     }
 };
 
-console.log('✅ ProfileUI v5.1.0 загружен');
+console.log('✅ ProfileUI v5.2.0 загружен');
