@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/ui/profile-ui.js
 // Описание: Работа с модалками (Избранное, Корзина)
-// Версия: 3.0.0 - через универсальную модалку
+// Версия: 4.0.0 - ИСПОЛЬЗУЕТ НОВУЮ НАВИГАЦИЮ
 // ============================================
 
 class ProfileUI {
@@ -9,6 +9,7 @@ class ProfileUI {
         this.chatStore = window.chatStore;
         this.userStore = window.userStore;
         this.eventBus = window.eventBus;
+        this.navigationState = window.navigationState;
         this._subscriptions = [];
         
         this._subscribeToEvents();
@@ -20,7 +21,6 @@ class ProfileUI {
 
     _subscribeToEvents() {
         const unsubFav = this.eventBus.on('chat:favorite_toggled', () => {
-            // Если модалка с избранным открыта — обновляем
             if (window.modalManager?.isOpen()) {
                 this.renderFavoritesModal();
             }
@@ -54,9 +54,7 @@ class ProfileUI {
         window.showModal({
             title: '⭐ Избранное',
             content: content,
-            onClose: () => {
-                // Ничего не делаем, просто закрываем
-            }
+            onClose: () => {}
         });
     }
 
@@ -118,49 +116,49 @@ class ProfileUI {
         return html;
     }
 
-// ==========================================
-// ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО (обновленная версия)
-// ==========================================
+    // ==========================================
+    // ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО (С АВТОЗАКРЫТИЕМ МОДАЛКИ И САЙДБАРА)
+    // ==========================================
 
-_openChatFromFavorite(chatId, topic, msgId) {
-    console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}, сообщение: ${msgId}`);
-    
-    // ✅ Закрываем модалку
-    if (window.navigationState) {
-        window.navigationState.toggleModal(false);
-    } else if (window.modalManager) {
-        window.modalManager.close();
-    }
-    
-    // ✅ Открываем чат через навигацию
-    if (window.navigationState) {
-        window.navigationState.openChat(chatId, topic);
-    } else if (window.eventBus) {
-        window.eventBus.emit('navigation:open_chat', { chatId, topic });
-    } else {
-        window.openChat(chatId, topic);
-    }
-    
-    // ✅ После открытия скроллим к сообщению
-    setTimeout(() => {
-        const target = document.getElementById(`msg-block-${msgId}`);
-        const container = document.getElementById('chat-container');
-        if (container && target) {
-            container.scrollTo({ top: Math.max(0, target.offsetTop - 80), behavior: 'smooth' });
-            target.style.transition = 'background 0.5s';
-            target.style.background = 'rgba(212,175,55,0.15)';
-            setTimeout(() => target.style.background = '', 1500);
-        } else {
-            console.warn(`⚠️ Не найден блок сообщения ${msgId} или контейнер чата`);
+    _openChatFromFavorite(chatId, topic, msgId) {
+        console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}, сообщение: ${msgId}`);
+        
+        // ✅ Закрываем модалку
+        if (this.navigationState) {
+            this.navigationState.toggleModal(false);
+        } else if (window.modalManager) {
+            window.modalManager.close();
         }
-    }, 500);
-}
+        
+        // ✅ Закрываем сайдбар (если открыт) через navigationState
+        if (this.navigationState) {
+            // openChat сам закроет сайдбар
+            this.navigationState.openChat(chatId, topic);
+        } else if (this.eventBus) {
+            this.eventBus.emit('navigation:open_chat', { chatId, topic });
+        } else {
+            window.openChat(chatId, topic);
+        }
+        
+        // ✅ После открытия скроллим к сообщению
+        setTimeout(() => {
+            const target = document.getElementById(`msg-block-${msgId}`);
+            const container = document.getElementById('chat-container');
+            if (container && target) {
+                container.scrollTo({ top: Math.max(0, target.offsetTop - 80), behavior: 'smooth' });
+                target.style.transition = 'background 0.5s';
+                target.style.background = 'rgba(212,175,55,0.15)';
+                setTimeout(() => target.style.background = '', 1500);
+            } else {
+                console.warn(`⚠️ Не найден блок сообщения ${msgId} или контейнер чата`);
+            }
+        }, 500);
+    }
 
     async _unfavorite(chatId, msgId) {
         if (window.messageService) {
             await window.messageService.toggleFavorite(chatId, msgId);
         }
-        // Обновляем модалку
         this.renderFavoritesModal();
     }
 
@@ -261,7 +259,6 @@ _openChatFromFavorite(chatId, topic, msgId) {
                 await window.chatService.restoreChat(chatId);
             }
             
-            // Обновляем модалку
             this.renderTrashModal();
             
             if (window.uiRenderer) {
@@ -286,7 +283,6 @@ _openChatFromFavorite(chatId, topic, msgId) {
                 await window.chatService.permanentDeleteChat(chatId);
             }
             
-            // Обновляем модалку
             this.renderTrashModal();
             
             if (window.uiRenderer) {
@@ -315,7 +311,6 @@ _openChatFromFavorite(chatId, topic, msgId) {
                 }
             }
             
-            // Обновляем модалку
             this.renderTrashModal();
             
             if (window.uiRenderer) {
@@ -335,7 +330,6 @@ _openChatFromFavorite(chatId, topic, msgId) {
             const content = this._renderTrashContent();
             window.modalManager.updateContent(content);
             
-            // Обновляем футер с кнопкой очистки
             const footer = `
                 <button id="modal-save-btn" class="btn btn-danger" style="width:100%;">
                     🗑️ Очистить корзину полностью
@@ -444,21 +438,50 @@ _openChatFromFavorite(chatId, topic, msgId) {
     }
 }
 
-// Создаём глобальный экземпляр
-window.ProfileUI = ProfileUI;
-window.profileUI = new ProfileUI();
+// ==========================================
+// СОЗДАЁМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
+// ==========================================
 
-// Глобальные функции для модалок
+window.ProfileUI = ProfileUI;
+
+// Ждём navigationState
+const checkInterval = setInterval(() => {
+    if (window.navigationState) {
+        clearInterval(checkInterval);
+        if (!window.profileUI) {
+            window.profileUI = new ProfileUI();
+            console.log('✅ ProfileUI создан');
+        }
+    }
+}, 50);
+
+setTimeout(() => {
+    if (!window.profileUI) {
+        window.profileUI = new ProfileUI();
+        console.log('✅ ProfileUI создан (таймаут)');
+    }
+}, 3000);
+
+// ==========================================
+// ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ МОДАЛОК
+// ==========================================
+
 window.showFavoritesModal = function() {
-    window.profileUI.showFavoritesModal();
+    if (window.profileUI && typeof window.profileUI.showFavoritesModal === 'function') {
+        window.profileUI.showFavoritesModal();
+    }
 };
 
 window.showTrashModal = function() {
-    window.profileUI.showTrashModal();
+    if (window.profileUI && typeof window.profileUI.showTrashModal === 'function') {
+        window.profileUI.showTrashModal();
+    }
 };
 
 window.showContextModal = function(chatId) {
-    window.profileUI.showContextModal(chatId);
+    if (window.profileUI && typeof window.profileUI.showContextModal === 'function') {
+        window.profileUI.showContextModal(chatId);
+    }
 };
 
-console.log('✅ ProfileUI v3.0.0 загружен (через универсальную модалку)');
+console.log('✅ ProfileUI v4.0.0 загружен (новая навигация)');
