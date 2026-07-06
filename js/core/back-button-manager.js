@@ -1,7 +1,7 @@
 // ============================================
 // js/core/back-button-manager.js
 // Описание: Управление системной кнопкой «Назад» Telegram
-// Версия: 4.0.0 - НОВАЯ ЛОГИКА (только чат, профиль, сайдбар)
+// Версия: 4.0.1 - ИСПРАВЛЕНА ОШИБКА this._hide
 // ============================================
 
 class BackButtonManager {
@@ -56,7 +56,7 @@ class BackButtonManager {
         // Первоначальное обновление
         setTimeout(() => this._update(), 100);
 
-        console.log('✅ BackButtonManager v4.0.0 инициализирован (чат, профиль, сайдбар)');
+        console.log('✅ BackButtonManager v4.0.1 инициализирован (чат, профиль, сайдбар)');
     }
 
     // ==========================================
@@ -67,9 +67,9 @@ class BackButtonManager {
         const shouldShow = this._shouldShow();
         
         if (shouldShow) {
-            this._show();
+            this.show();
         } else {
-            this._hide();
+            this.hide();
         }
     }
 
@@ -147,7 +147,7 @@ class BackButtonManager {
             }
         }
         this._subscriptions = [];
-        this._hide();
+        this.hide();
         console.log('📡 BackButtonManager отписан от событий');
     }
 }
@@ -183,4 +183,4 @@ window.refreshBackButton = function() {
     }
 };
 
-console.log('✅ BackButtonManager v4.0.0 загружен');
+console.log('✅ BackButtonManager v4.0.1 загружен');
