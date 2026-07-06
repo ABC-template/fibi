@@ -1,10 +1,10 @@
 // ============================================
 // js/core/app.js
 // Описание: Инициализация приложения (с JWT)
-// Версия: 6.0.0 - ПОЛНАЯ ИНТЕГРАЦИЯ С НОВОЙ НАВИГАЦИЕЙ
+// Версия: 7.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
 // ============================================
 
-console.log('🚀 App v6.0.0 начал загрузку');
+console.log('🚀 App v7.0.0 начал загрузку');
 
 // ==========================================
 // ✅ ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
@@ -60,7 +60,7 @@ function showTelegramRequiredScreen() {
                     📲 Открыть в Telegram
                 </a>
                 <div style="margin-top: 24px; font-size: 12px; color: var(--app-text-tertiary, #A89880);">
-                    Версия 6.0.0
+                    Версия 7.0.0
                 </div>
             </div>
         `;
@@ -206,7 +206,7 @@ window.fullDataReload = async function() {
 };
 
 // ==========================================
-// УПРАВЛЕНИЕ САЙДБАРОМ
+// УПРАВЛЕНИЕ САЙДБАРОМ (ЧЕРЕЗ NAVIGATIONSTATE)
 // ==========================================
 
 window.openDrawer = function() {
@@ -224,11 +224,12 @@ window.openDrawer = function() {
     drawer.classList.add('active');
     drawer.classList.remove('drawer-anim-out');
     drawer.classList.add('drawer-anim-in');
-    if (window.tg?.BackButton) {
-        window.tg.BackButton.show();
-        window.tg.BackButton.offClick();
-        window.tg.BackButton.onClick(() => { window.closeDrawer(); });
+    
+    // ✅ Используем NavigationState для управления сайдбаром
+    if (window.navigationState) {
+        window.navigationState.toggleDrawer(true);
     }
+    
     document.body.style.overflow = 'hidden';
     
     if (window.eventBus) {
@@ -251,7 +252,12 @@ window.closeDrawer = function() {
         drawer.classList.remove('active');
         overlay.classList.remove('active');
     }, 300);
-    if (window.tg?.BackButton) window.tg.BackButton.hide();
+    
+    // ✅ Используем NavigationState для управления сайдбаром
+    if (window.navigationState) {
+        window.navigationState.toggleDrawer(false);
+    }
+    
     document.body.style.overflow = '';
 };
 
@@ -268,7 +274,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ==========================================
-// ✅ ОТКРЫТИЕ ЧАТА (НОВАЯ ВЕРСИЯ - ЧЕРЕЗ СОБЫТИЯ)
+// ✅ ОТКРЫТИЕ ЧАТА (ЧЕРЕЗ NAVIGATIONSTATE)
 // ==========================================
 
 window.openChat = function(chatId, topic) {
@@ -280,11 +286,13 @@ window.openChat = function(chatId, topic) {
         window.closeDrawer();
     }
     
-    // ✅ Используем событие для открытия чата
-    if (window.eventBus) {
+    // ✅ Используем NavigationState для открытия чата
+    if (window.navigationState) {
+        window.navigationState.openChat(chatId, topic);
+    } else if (window.eventBus) {
         window.eventBus.emit('navigation:open_chat', { chatId, topic });
     } else {
-        console.error('❌ EventBus не найден');
+        console.error('❌ NavigationState не найден');
     }
 };
 
@@ -295,10 +303,10 @@ window.openChat = function(chatId, topic) {
 window.goToChatList = function() {
     console.log('📂 [goToChatList] Возврат в ChatListModule');
     
-    if (window.eventBus) {
-        window.eventBus.emit('navigation:go_back');
-    } else if (window.navigationState) {
+    if (window.navigationState) {
         window.navigationState.goToChatList();
+    } else if (window.eventBus) {
+        window.eventBus.emit('navigation:go_back');
     } else if (window.moduleLoader) {
         window.moduleLoader.load('chat-list');
     }
@@ -619,7 +627,7 @@ function appendDrawerNav(container) {
         <div class="drawer-nav-item" id="drawer-clear-cache" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; color: var(--app-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--app-font-family, -apple-system, sans-serif); -webkit-tap-highlight-color: transparent;">
             <i data-lucide="trash" style="width:20px;height:20px;"></i> Очистить кэш
         </div>
-        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 6.0.0</div>
+        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.0.0</div>
     `;
     
     container.appendChild(nav);
@@ -641,7 +649,12 @@ function appendDrawerNav(container) {
     const profileItem = nav.querySelector('#drawer-profile');
     if (profileItem) {
         profileItem.addEventListener('click', function() {
-            window.goToProfile();
+            // ✅ Используем NavigationState для перехода в профиль
+            if (window.navigationState) {
+                window.navigationState.navigate('profile');
+            } else {
+                window.goToProfile();
+            }
         });
     }
     
@@ -898,14 +911,18 @@ function updateThemeLabel(theme) {
 
 window.goToTasks = function() {
     window.closeDrawer();
-    if (window.moduleLoader) {
+    if (window.navigationState) {
+        window.navigationState.navigate('tasks');
+    } else if (window.moduleLoader) {
         window.moduleLoader.load('tasks');
     }
 };
 
 window.goToProfile = function() {
     window.closeDrawer();
-    if (window.moduleLoader) {
+    if (window.navigationState) {
+        window.navigationState.navigate('profile');
+    } else if (window.moduleLoader) {
         window.moduleLoader.load('profile');
     }
 };
@@ -1276,7 +1293,6 @@ async function initApp() {
     // ✅ ЗАГРУЖАЕМ СТАРТОВЫЙ МОДУЛЬ
     // ==========================================
     if (window.moduleLoader) {
-        // Загружаем ChatListModule как стартовый для раздела Versatile
         await window.moduleLoader.load('chat-list', {}, { silent: true });
     } else {
         console.error('❌ ModuleLoader не найден');
@@ -1302,7 +1318,6 @@ async function initApp() {
         if (activeFilter === 'all') {
             const card = document.getElementById('profile-card');
             if (card) card.classList.add('hidden');
-            if (window.tg?.BackButton) window.tg.BackButton.hide();
             if (window.chatUI) {
                 const newChat = window.chatUI.createNewChat();
                 if (newChat) {
@@ -1318,7 +1333,6 @@ async function initApp() {
         const topic = topicMap[activeFilter] || 'code';
         const card = document.getElementById('profile-card');
         if (card) card.classList.add('hidden');
-        if (window.tg?.BackButton) window.tg.BackButton.hide();
         if (chatStore) {
             chatStore.currentTopic = topic;
             const newChat = chatStore.createTempChat(topic);
@@ -1340,7 +1354,7 @@ async function initApp() {
     const currentTheme = window.themeManager?.getCurrentTheme() || 'light';
     updateThemeLabel(currentTheme);
 
-    console.log('✅ Приложение v6.0.0 успешно загружено');
+    console.log('✅ Приложение v7.0.0 успешно загружено');
 }
 
 // ==========================================
@@ -1406,4 +1420,4 @@ setTimeout(initLucideIcons, 300);
 window.addEventListener('load', initLucideIcons);
 setTimeout(initLucideIcons, 1000);
 
-console.log('✅ app.js v6.0.0 полностью загружен');
+console.log('✅ app.js v7.0.0 полностью загружен');
