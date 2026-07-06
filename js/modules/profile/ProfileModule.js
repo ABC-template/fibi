@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/profile/ProfileModule.js
 // Описание: Полноценная страница профиля
-// Версия: 3.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
+// Версия: 3.0.0 - УБРАНА КНОПКА НАЗАД ИЗ ХЕДЕРА
 // ============================================
 
 class ProfileModule {
@@ -17,7 +17,7 @@ class ProfileModule {
     async init() {
         if (this.isInitialized) return;
 
-        // ✅ Устанавливаем заголовок "Настройки" для профиля
+        // ✅ ТОЛЬКО ЗАГОЛОВОК, БЕЗ КНОПКИ НАЗАД
         if (this.headerManager) {
             this.headerManager.setTitle('⚙️ Настройки');
             this.headerManager.setActions([]);
@@ -32,7 +32,7 @@ class ProfileModule {
                 flex-direction: column;
                 gap: 16px;
             ">
-                <!-- Заголовок -->
+                <!-- Заголовок без кнопки назад -->
                 <div style="
                     display: flex;
                     align-items: center;
@@ -40,7 +40,6 @@ class ProfileModule {
                     padding-bottom: 12px;
                     border-bottom: 1px solid var(--app-border-color-light);
                 ">
-                    <!-- ❌ УДАЛЕНА РУЧНАЯ КНОПКА НАЗАД -->
                     <h2 style="
                         font-size: 20px;
                         font-weight: 700;
@@ -51,9 +50,7 @@ class ProfileModule {
                     </h2>
                 </div>
 
-                <!-- ==========================================
-                     БЛОК 1: ПОЛЬЗОВАТЕЛЬ
-                ========================================== -->
+                <!-- БЛОК 1: ПОЛЬЗОВАТЕЛЬ -->
                 <div style="
                     background: var(--app-bg-secondary);
                     border-radius: 16px;
@@ -115,9 +112,7 @@ class ProfileModule {
                     </div>
                 </div>
 
-                <!-- ==========================================
-                     БЛОК 2: СТАТИСТИКА
-                ========================================== -->
+                <!-- БЛОК 2: СТАТИСТИКА -->
                 <div style="
                     background: var(--app-bg-secondary);
                     border-radius: 16px;
@@ -191,7 +186,6 @@ class ProfileModule {
                         </div>
                     </div>
                     
-                    <!-- Лимиты (прогресс-бар) -->
                     <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--app-border-color-light);">
                         <div style="
                             display: flex;
@@ -221,9 +215,7 @@ class ProfileModule {
                     </div>
                 </div>
 
-                <!-- ==========================================
-                     БЛОК 3: НАСТРОЙКИ
-                ========================================== -->
+                <!-- БЛОК 3: НАСТРОЙКИ -->
                 <div style="
                     background: var(--app-bg-secondary);
                     border-radius: 16px;
@@ -277,9 +269,7 @@ class ProfileModule {
                     </div>
                 </div>
 
-                <!-- ==========================================
-                     БЛОК 4: ДАННЫЕ
-                ========================================== -->
+                <!-- БЛОК 4: ДАННЫЕ -->
                 <div style="
                     background: var(--app-bg-secondary);
                     border-radius: 16px;
@@ -340,9 +330,7 @@ class ProfileModule {
                     </button>
                 </div>
 
-                <!-- ==========================================
-                     БЛОК 5: БЕЗОПАСНОСТЬ
-                ========================================== -->
+                <!-- БЛОК 5: БЕЗОПАСНОСТЬ -->
                 <div style="
                     background: var(--app-bg-secondary);
                     border-radius: 16px;
@@ -376,20 +364,14 @@ class ProfileModule {
                     color: var(--app-text-tertiary);
                     padding: 8px 0;
                 ">
-                    Версия 5.4.0
+                    Версия 7.0.0
                 </div>
             </div>
         `;
 
-        // Заполняем данными
         this.updateProfileData();
         this.updateStats();
-
-        // Подписываемся на события
         this._subscribeToEvents();
-
-        // ❌ УДАЛЯЕМ ВЫЗОВ _showBackButton()
-        // Системная кнопка управляется централизованно через BackButtonManager
 
         setTimeout(() => {
             if (typeof lucide !== 'undefined') {
@@ -398,7 +380,7 @@ class ProfileModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ ProfileModule v3.0.0 инициализирован (убраны ручные кнопки)');
+        console.log('✅ ProfileModule v3.0.0 инициализирован');
     }
 
     // ==========================================
@@ -406,27 +388,23 @@ class ProfileModule {
     // ==========================================
 
     _subscribeToEvents() {
-        // Обновление баланса
         const unsubBalance = this.eventBus.on('tasks:balance_changed', (data) => {
             const coinsEl = document.getElementById('profile-coins');
             if (coinsEl) coinsEl.textContent = data.newBalance || 0;
         }, this);
         this._subscriptions.push(unsubBalance);
 
-        // Обновление роли
         const unsubRole = this.eventBus.on('user:role_changed', (data) => {
             this._updateRole(data.newRole);
             this.updateStats();
         }, this);
         this._subscriptions.push(unsubRole);
 
-        // Обновление лимитов
         const unsubUsage = this.eventBus.on('user:usage_incremented', (data) => {
             this._updateLimits(data.used, data.limit);
         }, this);
         this._subscriptions.push(unsubUsage);
 
-        // Обновление статистики при изменении чатов
         const unsubChats = this.eventBus.on('chat:all_updated', () => {
             this.updateStats();
         }, this);
@@ -466,7 +444,6 @@ class ProfileModule {
             coinsEl.textContent = window.tasksStore?.getBalance() || 0;
         }
 
-        // Обновляем лимиты
         const userStore = window.userStore;
         if (userStore) {
             this._updateLimits(userStore.usedToday || 0, userStore.dailyLimit || 0);
@@ -507,7 +484,6 @@ class ProfileModule {
         const chatStore = window.chatStore;
         if (!chatStore) return;
 
-        // Собираем все чаты
         const allChats = [];
         for (const [topic, chats] of Object.entries(chatStore.histories || {})) {
             if (!chats) continue;
@@ -518,7 +494,6 @@ class ProfileModule {
             }
         }
 
-        // Считаем статистику
         let totalMessages = 0;
         let activeChats = 0;
         for (const chat of allChats) {
@@ -538,9 +513,6 @@ class ProfileModule {
         if (favEl) favEl.textContent = favorites.length || 0;
     }
 
-    // ❌ УДАЛЕНЫ МЕТОДЫ _showBackButton() и _hideBackButton()
-    // Теперь системная кнопка управляется централизованно
-
     // ==========================================
     // УПРАВЛЕНИЕ МОДУЛЕМ
     // ==========================================
@@ -552,35 +524,27 @@ class ProfileModule {
         this.container.style.height = '100%';
         this.container.style.width = '100%';
 
-        // ✅ Устанавливаем заголовок при показе
         if (this.headerManager) {
             this.headerManager.setTitle('⚙️ Настройки');
             this.headerManager.setActions([]);
         }
 
-        // Обновляем данные при показе
         this.updateProfileData();
         this.updateStats();
 
-        // ❌ УДАЛЯЕМ ВЫЗОВ _showBackButton()
-        // Системная кнопка управляется централизованно через NavigationState
-
         if (window.navigation) {
-            window.navigation.hide(); // Скрываем нижнюю навигацию
+            window.navigation.hide();
         }
 
         console.log('📱 ProfileModule показан');
     }
 
     hide() {
-        // ❌ УДАЛЯЕМ ВЫЗОВ _hideBackButton()
-        // Системная кнопка управляется централизованно
-
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
 
         if (window.navigation) {
-            window.navigation.show(); // Показываем нижнюю навигацию
+            window.navigation.show();
         }
 
         console.log('📱 ProfileModule скрыт');
@@ -610,7 +574,7 @@ class ProfileModule {
 window.ProfileModule = ProfileModule;
 
 // ==========================================
-// ВОЗВРАТ ИЗ ПРОФИЛЯ (обновленная версия)
+// ВОЗВРАТ ИЗ ПРОФИЛЯ (через системную кнопку)
 // ==========================================
 
 window.goBackFromProfile = function() {
@@ -621,7 +585,6 @@ window.goBackFromProfile = function() {
     } else if (window.eventBus) {
         window.eventBus.emit('navigation:go_back');
     } else {
-        // Fallback
         if (window.moduleLoader) {
             window.moduleLoader.load('dashboard');
         }
@@ -671,7 +634,6 @@ window.clearCacheFromProfile = function() {
             window.uiRenderer.showToast('🧹 Кэш и токен очищены', 'success', 1500);
         }
 
-        // Закрываем профиль и перезагружаем
         window.goBackFromProfile();
         setTimeout(() => location.reload(), 1000);
     };
@@ -683,4 +645,4 @@ window.clearCacheFromProfile = function() {
     }
 };
 
-console.log('✅ ProfileModule v3.0.0 загружен (убраны ручные кнопки назад)');
+console.log('✅ ProfileModule v3.0.0 загружен (убрана кнопка назад)');
