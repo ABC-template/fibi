@@ -1,7 +1,7 @@
 // ============================================
 // js/core/modal-manager.js
 // Описание: Универсальный менеджер модалок
-// Версия: 2.0.0 - ИНТЕГРАЦИЯ С navigationState
+// Версия: 3.0.0 - ИНТЕГРАЦИЯ С navigationState + ПРАВИЛЬНЫЕ КЛИКИ
 // ============================================
 
 class ModalManager {
@@ -30,19 +30,24 @@ class ModalManager {
     // ==========================================
 
     _initEvents() {
-        // Закрытие по крестику
+        // ✅ Закрытие по крестику
         this.closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.close();
         });
 
-        // Закрытие по клику на оверлей
+        // ✅ Закрытие ТОЛЬКО по клику на оверлей (НЕ на содержимое модалки!)
         this.overlay.addEventListener('click', (e) => {
+            // ⚠️ ВАЖНО: закрываем только если кликнули именно по оверлею, а не по содержимому
             if (e.target === this.overlay) {
                 e.stopPropagation();
                 this.close();
             }
         });
+
+        // ❌ НЕТ обработчиков на modal-body или modal-content!
+        // ❌ НЕТ document.addEventListener с проверкой клика вне модалки!
+        // Клик внутри модалки НЕ должен закрывать её!
 
         // Подписка на событие закрытия через кнопку "Назад"
         if (this.eventBus) {
@@ -54,7 +59,7 @@ class ModalManager {
             }, this);
         }
 
-        console.log('✅ ModalManager v2.0.0 инициализирован');
+        console.log('✅ ModalManager v3.0.0 инициализирован');
     }
 
     // ==========================================
@@ -345,7 +350,11 @@ class ModalManager {
 // ==========================================
 
 window.ModalManager = ModalManager;
-window.modalManager = new ModalManager();
+
+// Проверяем, не создан ли уже экземпляр
+if (!window.modalManager) {
+    window.modalManager = new ModalManager();
+}
 
 // Глобальные функции для удобства
 window.showModal = function(options) {
@@ -356,4 +365,4 @@ window.closeModal = function() {
     window.modalManager.close();
 };
 
-console.log('✅ ModalManager v2.0.0 загружен');
+console.log('✅ ModalManager v3.0.0 загружен');
