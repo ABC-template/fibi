@@ -1,7 +1,7 @@
 // ============================================
 // js/core/back-button-manager.js
 // Описание: Управление системной кнопкой «Назад» Telegram
-// Версия: 4.0.2 - ИСПРАВЛЕН КОНФЛИКТ ПЕРЕМЕННЫХ
+// Версия: 5.0.0 - ПРИОРИТЕТ: модалка → сайдбар → навигация
 // ============================================
 
 class BackButtonManager {
@@ -45,7 +45,15 @@ class BackButtonManager {
         }, this);
         this._subscriptions.push(unsubDrawer);
 
-        // ❌ НЕ ПОДПИСЫВАЕМСЯ НА МОДАЛКИ (они не влияют)
+        // ❌ НЕ ПОДПИСЫВАЕМСЯ НА МОДАЛКИ (они не влияют на показ/скрытие)
+        // Но подписываемся на закрытие модалок через кнопку "Назад"
+        const unsubModalBack = this.eventBus.on('modal:state_changed', (data) => {
+            // Если модалка закрыта через кнопку "Назад" — обновляем состояние
+            if (data && data.action === 'back') {
+                this._update();
+            }
+        }, this);
+        this._subscriptions.push(unsubModalBack);
 
         // Обработка нажатия
         this.tg.BackButton.offClick();
@@ -56,7 +64,7 @@ class BackButtonManager {
         // Первоначальное обновление
         setTimeout(() => this._update(), 100);
 
-        console.log('✅ BackButtonManager v4.0.2 инициализирован (чат, профиль, сайдбар)');
+        console.log('✅ BackButtonManager v5.0.0 инициализирован');
     }
 
     // ==========================================
@@ -78,6 +86,7 @@ class BackButtonManager {
             return false;
         }
 
+        // ✅ Модалки НЕ ВЛИЯЮТ на кнопку!
         return this.navigationState.shouldShowBackButton();
     }
 
@@ -152,7 +161,7 @@ class BackButtonManager {
 }
 
 // ==========================================
-// СОЗДАЕМ ЭКЗЕМПЛЯР (с уникальным именем)
+// СОЗДАЕМ ЭКЗЕМПЛЯР
 // ==========================================
 
 window.BackButtonManager = BackButtonManager;
@@ -180,4 +189,4 @@ window.refreshBackButton = function() {
     }
 };
 
-console.log('✅ BackButtonManager v4.0.2 загружен');
+console.log('✅ BackButtonManager v5.0.0 загружен');
