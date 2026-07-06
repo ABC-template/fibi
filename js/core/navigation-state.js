@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation-state.js
 // Описание: Единое состояние навигации 
-// Версия: 4.0.0 - ПОДДЕРЖКА РЕЖИМОВ (ИГРЫ)
+// Версия: 4.0.0 - НОВАЯ ЛОГИКА КНОПКИ НАЗАД
 // ============================================
 
 class NavigationState {
@@ -21,9 +21,6 @@ class NavigationState {
         
         this._isNavigating = false;
         this._isLoading = false;
-        
-        // Список стартовых страниц
-        this._startPages = ['dashboard', 'chat-list', 'organizer', 'tasks'];
         
         this._subscribe();
         
@@ -47,31 +44,79 @@ class NavigationState {
     }
 
     // ==========================================
-    // ПРОВЕРКА СТАРТОВОЙ СТРАНИЦЫ
+    // ✅ НОВАЯ ЛОГИКА: НУЖНО ЛИ ПОКАЗЫВАТЬ КНОПКУ НАЗАД?
     // ==========================================
 
-    isStartPage(module, params = {}) {
-        // Проверяем по списку стартовых страниц
-        if (this._startPages.includes(module)) {
+    shouldShowBackButton() {
+        // 1. Сайдбар открыт → ДА
+        if (this._state.isDrawerOpen) {
+            console.log('🔙 shouldShowBackButton: ДА (сайдбар открыт)');
             return true;
         }
-        
-        // Для GamesModule проверяем режим
-        if (module === 'games') {
-            return params?.gameMode === 'list' || !params?.gameMode;
+
+        // 2. Чат открыт → ДА
+        if (this._state.module === 'chat') {
+            console.log('🔙 shouldShowBackButton: ДА (чат открыт)');
+            return true;
         }
-        
+
+        // 3. Профиль открыт → ДА
+        if (this._state.module === 'profile') {
+            console.log('🔙 shouldShowBackButton: ДА (профиль открыт)');
+            return true;
+        }
+
+        // 4. Всё остальное → НЕТ
+        console.log('🔙 shouldShowBackButton: НЕТ (корневой модуль)');
         return false;
     }
 
     // ==========================================
-    // ПУБЛИЧНЫЕ МЕТОДЫ
+    // ОБРАБОТКА НАЖАТИЯ КНОПКИ НАЗАД
+    // ==========================================
+
+    back() {
+        console.log('🔙 NavigationState.back()');
+
+        // 1. Если сайдбар открыт → закрываем его
+        if (this._state.isDrawerOpen) {
+            this.toggleDrawer(false);
+            return;
+        }
+
+        // 2. Если чат открыт → возвращаемся в список чатов
+        if (this._state.module === 'chat') {
+            this.goToChatList();
+            return;
+        }
+
+        // 3. Если профиль открыт → возвращаемся в предыдущий модуль
+        if (this._state.module === 'profile') {
+            if (this._state.history.length > 0) {
+                const prev = this._state.history.pop();
+                this.navigate(prev.module, prev.params, { replace: true });
+            } else {
+                this.navigate('chat-list', {}, { replace: true });
+            }
+            return;
+        }
+
+        // 4. Иначе → используем историю или возвращаемся на главную
+        if (this._state.history.length > 0) {
+            const prev = this._state.history.pop();
+            this.navigate(prev.module, prev.params, { replace: true });
+        } else {
+            this.navigate('dashboard', {}, { replace: true });
+        }
+    }
+
+    // ==========================================
+    // НАВИГАЦИЯ
     // ==========================================
 
     async navigate(module, params = {}, options = {}) {
         const { replace = false, silent = false, addToHistory = true, force = false } = options;
         
-        // Проверяем, нужно ли обновлять параметры
         if (!force && this._state.module === module && 
             JSON.stringify(this._state.params) === JSON.stringify(params)) {
             console.log(`⏭️ Уже в модуле ${module}, пропускаем`);
@@ -86,10 +131,8 @@ class NavigationState {
         this._isLoading = true;
 
         try {
-            // Сохраняем в историю, только если это НЕ стартовая страница
-            const isStart = this.isStartPage(module, params);
-            
-            if (addToHistory && !replace && !silent && !isStart) {
+            // Сохраняем в историю
+            if (addToHistory && !replace && !silent) {
                 this._state.history.push({
                     module: this._state.module,
                     params: { ...this._state.params }
@@ -108,12 +151,8 @@ class NavigationState {
                 this._state.history.pop();
             }
 
-            // ==========================================
-            // ЗАГРУЖАЕМ МОДУЛЬ
-            // ==========================================
-            
+            // Загружаем модуль
             const loader = this.moduleLoader;
-            
             if (loader) {
                 console.log(`📦 Загружаем модуль: ${module}`, params);
                 
@@ -132,39 +171,19 @@ class NavigationState {
                 
                 console.log(`✅ Модуль ${module} загружен`);
             } else {
-                console.warn(`⚠️ ModuleLoader не доступен, повторная попытка через 100мс...`);
-                
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                const retryLoader = this.moduleLoader;
-                if (retryLoader) {
-                    console.log(`📦 Повторная загрузка модуля: ${module}`, params);
-                    const instance = await retryLoader.load(module, params, { 
-                        silent: silent,
-                        replace: replace,
-                        force: force
-                    });
-                    
-                    if (!instance) {
-                        console.error(`❌ Не удалось загрузить модуль ${module} (повторная попытка)`);
-                        this._state.module = oldModule;
-                        this._isLoading = false;
-                        return;
-                    }
-                    
-                    console.log(`✅ Модуль ${module} загружен (повторная попытка)`);
-                } else {
-                    console.error(`❌ ModuleLoader так и не стал доступен!`);
-                    this._state.module = oldModule;
-                    this._isLoading = false;
-                    return;
-                }
+                console.error(`❌ ModuleLoader не доступен!`);
+                this._state.module = oldModule;
+                this._isLoading = false;
+                return;
             }
 
             // Отправляем событие
             if (!silent) {
                 this._emit();
             }
+            
+            // ✅ ОБНОВЛЯЕМ КНОПКУ НАЗАД ПОСЛЕ НАВИГАЦИИ
+            this._updateBackButton();
             
             console.log(`🧭 Навигация завершена: ${module}`, params);
             
@@ -176,93 +195,63 @@ class NavigationState {
     }
 
     // ==========================================
-    // НАЗАД
-    // ==========================================
-
-    back() {
-        console.log('🔙 NavigationState.back()');
-        
-        // 1. Если есть модалки — закрываем последнюю
-        if (this._state.modalStack.length > 0) {
-            const lastModal = this._state.modalStack.pop();
-            this._emit('modal:state_changed', { 
-                isOpen: this._state.modalStack.length > 0,
-                modalId: lastModal
-            });
-            return;
-        }
-
-        // 2. Если открыт сайдбар — закрываем его
-        if (this._state.isDrawerOpen) {
-            this.toggleDrawer(false);
-            return;
-        }
-
-        // 3. Если мы в игре — закрываем игру
-        if (this._state.module === 'games' && this._state.params?.gameMode === 'game') {
-            const gamesModule = window.gamesModule;
-            if (gamesModule && typeof gamesModule.closeGame === 'function') {
-                gamesModule.closeGame();
-                // Обновляем состояние
-                this._state.params.gameMode = 'list';
-                this._state.params.gameId = null;
-                this._emit();
-                return;
-            }
-        }
-
-        // 4. Если есть история — возвращаемся
-        if (this._state.history.length > 0) {
-            const prev = this._state.history.pop();
-            this.navigate(prev.module, prev.params, { replace: true });
-            return;
-        }
-
-        // 5. Если мы на внутренней странице — возвращаемся на стартовую
-        if (!this.isStartPage(this._state.module, this._state.params)) {
-            if (this._state.module === 'chat') {
-                this.navigate('chat-list', {}, { replace: true });
-                return;
-            }
-            if (this._state.module === 'profile') {
-                this.navigate('dashboard', {}, { replace: true });
-                return;
-            }
-            if (this._state.module === 'games') {
-                this.navigate('games', { gameMode: 'list' }, { replace: true });
-                return;
-            }
-            // Fallback
-            this.navigate('dashboard', {}, { replace: true });
-            return;
-        }
-
-        // 6. Если мы на стартовой — ничего не делаем
-        console.log('⏭️ Уже на стартовой странице');
-    }
-
-    // ==========================================
-    // ОТКРЫТИЕ ЧАТА
+    // ОТКРЫТИЕ ЧАТА (С АВТОЗАКРЫТИЕМ САЙДБАРА)
     // ==========================================
 
     openChat(chatId, topic) {
         console.log(`📂 NavigationState.openChat: ${chatId}, ${topic}`);
+        
+        // ✅ ЗАКРЫВАЕМ САЙДБАР, ЕСЛИ ОТКРЫТ
+        if (this._state.isDrawerOpen) {
+            this.toggleDrawer(false);
+        }
+        
+        // Переходим в чат
         this.navigate('chat', { chatId, topic });
     }
+
+    // ==========================================
+    // ПЕРЕХОД В СПИСОК ЧАТОВ
+    // ==========================================
 
     goToChatList() {
         this.navigate('chat-list', {}, { replace: true });
     }
 
     // ==========================================
-    // САЙДБАР И МОДАЛКИ
+    // ОТКРЫТИЕ ПРОФИЛЯ (С АВТОЗАКРЫТИЕМ САЙДБАРА)
+    // ==========================================
+
+    openProfile() {
+        console.log('👤 NavigationState.openProfile');
+        
+        // ✅ ЗАКРЫВАЕМ САЙДБАР, ЕСЛИ ОТКРЫТ
+        if (this._state.isDrawerOpen) {
+            this.toggleDrawer(false);
+        }
+        
+        // Переходим в профиль
+        this.navigate('profile', {}, { addToHistory: true });
+    }
+
+    // ==========================================
+    // УПРАВЛЕНИЕ САЙДБАРОМ
     // ==========================================
 
     toggleDrawer(open) {
         const isOpen = open !== undefined ? open : !this._state.isDrawerOpen;
         this._state.isDrawerOpen = isOpen;
+        
+        // ✅ ОБНОВЛЯЕМ КНОПКУ НАЗАД
+        this._updateBackButton();
+        
         this._emit('drawer:state_changed', { isOpen });
+        console.log(`📂 Сайдбар ${isOpen ? 'открыт' : 'закрыт'}`);
     }
+
+    // ==========================================
+    // УПРАВЛЕНИЕ МОДАЛКАМИ (НЕ ВЛИЯЮТ НА КНОПКУ)
+    // ==========================================
 
     toggleModal(open, modalId = 'default') {
         if (open === false) {
@@ -280,6 +269,24 @@ class NavigationState {
     }
 
     // ==========================================
+    // ✅ ОБНОВЛЕНИЕ КНОПКИ НАЗАД
+    // ==========================================
+
+    _updateBackButton() {
+        const shouldShow = this.shouldShowBackButton();
+        
+        if (window.backButtonManager) {
+            if (shouldShow) {
+                window.backButtonManager.show();
+            } else {
+                window.backButtonManager.hide();
+            }
+        } else {
+            console.warn('⚠️ backButtonManager не найден');
+        }
+    }
+
+    // ==========================================
     // ГЕТТЕРЫ
     // ==========================================
 
@@ -290,16 +297,12 @@ class NavigationState {
             hasHistory: this._state.history.length > 0,
             isDrawerOpen: this._state.isDrawerOpen,
             isModalOpen: this._state.isModalOpen,
-            modalStack: [...this._state.modalStack],
-            isStartPage: this.isStartPage(this._state.module, this._state.params)
+            modalStack: [...this._state.modalStack]
         };
     }
 
     get canGoBack() {
-        return this._state.history.length > 0 || 
-               this._state.isDrawerOpen ||
-               this._state.modalStack.length > 0 ||
-               !this.isStartPage(this._state.module, this._state.params);
+        return this.shouldShowBackButton();
     }
 
     get currentModule() {
@@ -345,12 +348,17 @@ class NavigationState {
             this.toggleModal(false, data.modalId || 'default');
         });
 
+        // ✅ Подписка на открытие профиля
+        this.eventBus.on('navigation:open_profile', () => {
+            this.openProfile();
+        });
+
         console.log('📡 NavigationState подписан на события');
     }
 }
 
 // ==========================================
-// ✅ СОЗДАЕМ ЭКЗЕМПЛЯР
+// СОЗДАЕМ ЭКЗЕМПЛЯР
 // ==========================================
 
 window.NavigationState = NavigationState;
