@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/ui/profile-ui.js
 // Описание: Работа с модалками (Избранное, Корзина)
-// Версия: 4.0.1 - ИСПРАВЛЕН КОНФЛИКТ ПЕРЕМЕННЫХ
+// Версия: 5.0.0 - ПОЛНАЯ ИНТЕГРАЦИЯ С navigationState
 // ============================================
 
 class ProfileUI {
@@ -54,7 +54,10 @@ class ProfileUI {
         window.showModal({
             title: '⭐ Избранное',
             content: content,
-            onClose: () => {}
+            modalId: 'favorites',
+            onClose: () => {
+                // При закрытии модалки ничего не делаем
+            }
         });
     }
 
@@ -118,19 +121,21 @@ class ProfileUI {
 
     // ==========================================
     // ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО
+    // ✅ Закрываем модалку → закрываем сайдбар → открываем чат
     // ==========================================
 
     _openChatFromFavorite(chatId, topic, msgId) {
         console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}, сообщение: ${msgId}`);
         
-        // Закрываем модалку
+        // ✅ 1. Закрываем модалку (через navigationState)
         if (this.navigationState) {
-            this.navigationState.toggleModal(false);
+            this.navigationState.toggleModal(false, 'favorites');
         } else if (window.modalManager) {
             window.modalManager.close();
         }
         
-        // Открываем чат (сайдбар закроется автоматически)
+        // ✅ 2. Закрываем сайдбар (если открыт) — navigationState сделает это автоматически
+        // ✅ 3. Открываем чат
         if (this.navigationState) {
             this.navigationState.openChat(chatId, topic);
         } else if (this.eventBus) {
@@ -139,7 +144,7 @@ class ProfileUI {
             window.openChat(chatId, topic);
         }
         
-        // Скроллим к сообщению
+        // ✅ 4. Скроллим к сообщению
         setTimeout(() => {
             const target = document.getElementById(`msg-block-${msgId}`);
             const container = document.getElementById('chat-container');
@@ -176,6 +181,7 @@ class ProfileUI {
         window.showModal({
             title: '🗑️ Корзина',
             content: content,
+            modalId: 'trash',
             footer: `
                 <button id="modal-save-btn" class="btn btn-danger" style="width:100%;">
                     🗑️ Очистить корзину полностью
@@ -388,6 +394,7 @@ class ProfileUI {
         window.showModal({
             title: '🧠 Память чата',
             content: content,
+            modalId: 'context',
             footer: footer,
             showFooter: true,
             onSave: () => {
@@ -436,7 +443,7 @@ class ProfileUI {
 }
 
 // ==========================================
-// СОЗДАЁМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР (с уникальным именем)
+// СОЗДАЁМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
 // ==========================================
 
 window.ProfileUI = ProfileUI;
@@ -480,4 +487,4 @@ window.showContextModal = function(chatId) {
     }
 };
 
-console.log('✅ ProfileUI v4.0.1 загружен (исправлен конфликт переменных)');
+console.log('✅ ProfileUI v5.0.0 загружен');
