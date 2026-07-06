@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation-state.js
 // Описание: Единое состояние навигации
-// Версия: 5.3.0 - ГАРАНТИРОВАННОЕ ЗАКРЫТИЕ САЙДБАРА
+// Версия: 6.0.0 - РАЗДЕЛЕНИЕ СОСТОЯНИЯ И DOM
 // ============================================
 
 class NavigationState {
@@ -9,6 +9,7 @@ class NavigationState {
         this.eventBus = window.eventBus;
         this._moduleLoader = null;
         
+        // Состояние
         this._state = {
             module: 'dashboard',
             params: {},
@@ -23,7 +24,7 @@ class NavigationState {
         
         this._subscribe();
         
-        console.log('✅ NavigationState v5.3.0 инициализирован');
+        console.log('✅ NavigationState v6.0.0 инициализирован');
     }
 
     get moduleLoader() {
@@ -32,6 +33,10 @@ class NavigationState {
         }
         return this._moduleLoader;
     }
+
+    // ==========================================
+    // НУЖНО ЛИ ПОКАЗЫВАТЬ КНОПКУ НАЗАД?
+    // ==========================================
 
     shouldShowBackButton() {
         // Физическая проверка сайдбара
@@ -53,11 +58,22 @@ class NavigationState {
         return false;
     }
 
-    // ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ
+    // ==========================================
+    // ОБРАБОТКА НАЖАТИЯ КНОПКИ НАЗАД
+    // ✅ ПРИОРИТЕТ: модалка → сайдбар → навигация
+    // ==========================================
+
     back() {
         console.log('🔙 NavigationState.back()');
-        
-        // 1. Проверяем модалки
+        console.log('📊 Текущее состояние:', {
+            modalStack: this._state.modalStack,
+            isDrawerOpen: this._state.isDrawerOpen,
+            module: this._state.module
+        });
+
+        // ==========================================
+        // 1. ПРОВЕРЯЕМ МОДАЛКИ (самая верхняя)
+        // ==========================================
         if (this._state.modalStack.length > 0) {
             const lastModal = this._state.modalStack.pop();
             console.log(`📱 Закрываем модалку: ${lastModal}`);
@@ -75,46 +91,56 @@ class NavigationState {
             return;
         }
 
-        // 2. ✅ ГАРАНТИРОВАННО закрываем сайдбар
+        // ==========================================
+        // 2. ✅ ПРОВЕРЯЕМ САЙДБАР (физически)
+        // ==========================================
         const drawer = document.getElementById('drawer');
         const overlay = document.getElementById('drawer-overlay');
         const isDrawerPhysicallyOpen = drawer?.classList.contains('active') || false;
         
         if (isDrawerPhysicallyOpen || this._state.isDrawerOpen) {
-            console.log('📂 Закрываем сайдбар (физически)');
+            console.log('📂 Закрываем сайдбар через closeDrawer()');
             
-            // Физическое закрытие
-            if (drawer) {
-                drawer.classList.remove('active');
-                drawer.classList.remove('drawer-anim-in');
-                drawer.classList.add('drawer-anim-out');
+            // ✅ ВСЕГДА используем closeDrawer() для физического закрытия
+            if (window.closeDrawer) {
+                window.closeDrawer();
+            } else {
+                // Fallback
+                if (drawer) {
+                    drawer.classList.remove('active');
+                    drawer.classList.remove('drawer-anim-in');
+                    drawer.classList.add('drawer-anim-out');
+                }
+                if (overlay) {
+                    overlay.classList.remove('active');
+                }
+                document.body.style.overflow = '';
+                setTimeout(() => {
+                    if (drawer) {
+                        drawer.classList.remove('drawer-anim-out');
+                    }
+                }, 300);
             }
-            if (overlay) {
-                overlay.classList.remove('active');
-            }
-            document.body.style.overflow = '';
             
             // Обновляем состояние
             this._state.isDrawerOpen = false;
             this._updateBackButton();
             this._emit('drawer:state_changed', { isOpen: false });
             
-            // Убираем класс анимации после завершения
-            setTimeout(() => {
-                if (drawer) {
-                    drawer.classList.remove('drawer-anim-out');
-                }
-            }, 300);
-            
             return;
         }
 
-        // 3. Проверяем модули
+        // ==========================================
+        // 3. ПРОВЕРЯЕМ МОДУЛИ
+        // ==========================================
+        
+        // Чат → список чатов
         if (this._state.module === 'chat') {
             this.goToChatList();
             return;
         }
 
+        // Профиль → предыдущий модуль или список чатов
         if (this._state.module === 'profile') {
             if (this._state.history.length > 0) {
                 const prev = this._state.history.pop();
@@ -125,6 +151,9 @@ class NavigationState {
             return;
         }
 
+        // ==========================================
+        // 4. ИСТОРИЯ ИЛИ ГЛАВНАЯ
+        // ==========================================
         if (this._state.history.length > 0) {
             const prev = this._state.history.pop();
             this.navigate(prev.module, prev.params, { replace: true });
@@ -132,6 +161,10 @@ class NavigationState {
             this.navigate('dashboard', {}, { replace: true });
         }
     }
+
+    // ==========================================
+    // НАВИГАЦИЯ
+    // ==========================================
 
     async navigate(module, params = {}, options = {}) {
         const { replace = false, silent = false, addToHistory = true, force = false } = options;
@@ -209,55 +242,86 @@ class NavigationState {
         }
     }
 
+    // ==========================================
+    // ОТКРЫТИЕ ЧАТА (с закрытием сайдбара)
+    // ==========================================
+
     openChat(chatId, topic) {
         console.log(`📂 NavigationState.openChat: ${chatId}, ${topic}`);
         
-        if (this._state.isDrawerOpen) {
-            this.toggleDrawer(false);
+        // ✅ Закрываем сайдбар через closeDrawer() если он открыт
+        const drawer = document.getElementById('drawer');
+        if (drawer?.classList.contains('active')) {
+            console.log('📂 Сайдбар открыт, закрываем через closeDrawer()');
+            if (window.closeDrawer) {
+                window.closeDrawer();
+            } else {
+                drawer.classList.remove('active');
+                document.getElementById('drawer-overlay')?.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+            this._state.isDrawerOpen = false;
+            this._updateBackButton();
+            this._emit('drawer:state_changed', { isOpen: false });
         }
         
+        // Переходим в чат
         this.navigate('chat', { chatId, topic });
     }
+
+    // ==========================================
+    // ПЕРЕХОД В СПИСОК ЧАТОВ
+    // ==========================================
 
     goToChatList() {
         this.navigate('chat-list', {}, { replace: true });
     }
 
+    // ==========================================
+    // ОТКРЫТИЕ ПРОФИЛЯ (с закрытием сайдбара)
+    // ==========================================
+
     openProfile() {
         console.log('👤 NavigationState.openProfile');
         
-        if (this._state.isDrawerOpen) {
-            this.toggleDrawer(false);
+        // ✅ Закрываем сайдбар через closeDrawer() если он открыт
+        const drawer = document.getElementById('drawer');
+        if (drawer?.classList.contains('active')) {
+            console.log('📂 Сайдбар открыт, закрываем через closeDrawer()');
+            if (window.closeDrawer) {
+                window.closeDrawer();
+            } else {
+                drawer.classList.remove('active');
+                document.getElementById('drawer-overlay')?.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+            this._state.isDrawerOpen = false;
+            this._updateBackButton();
+            this._emit('drawer:state_changed', { isOpen: false });
         }
         
         this.navigate('profile', {}, { addToHistory: true });
     }
 
+    // ==========================================
+    // УПРАВЛЕНИЕ САЙДБАРОМ (ТОЛЬКО СОСТОЯНИЕ!)
+    // ==========================================
+
     toggleDrawer(open) {
         const isOpen = open !== undefined ? open : !this._state.isDrawerOpen;
         this._state.isDrawerOpen = isOpen;
         
-        const drawer = document.getElementById('drawer');
-        const overlay = document.getElementById('drawer-overlay');
-        
-        if (isOpen) {
-            if (drawer && overlay) {
-                drawer.classList.add('active');
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        } else {
-            if (drawer && overlay) {
-                drawer.classList.remove('active');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        }
+        // ❌ НЕ УПРАВЛЯЕМ DOM!
+        // Всё управление DOM через openDrawer() и closeDrawer()
         
         this._updateBackButton();
         this._emit('drawer:state_changed', { isOpen });
-        console.log(`📂 Сайдбар ${isOpen ? 'открыт' : 'закрыт'}`);
+        console.log(`📂 Состояние сайдбара обновлено: ${isOpen ? 'открыт' : 'закрыт'}`);
     }
+
+    // ==========================================
+    // УПРАВЛЕНИЕ МОДАЛКАМИ
+    // ==========================================
 
     toggleModal(open, modalId = 'default') {
         if (open === false) {
@@ -293,6 +357,10 @@ class NavigationState {
         }
     }
 
+    // ==========================================
+    // ОБНОВЛЕНИЕ КНОПКИ НАЗАД
+    // ==========================================
+
     _updateBackButton() {
         const shouldShow = this.shouldShowBackButton();
         
@@ -304,6 +372,10 @@ class NavigationState {
             }
         }
     }
+
+    // ==========================================
+    // ГЕТТЕРЫ
+    // ==========================================
 
     get current() {
         return {
@@ -327,6 +399,10 @@ class NavigationState {
     get currentParams() {
         return { ...this._state.params };
     }
+
+    // ==========================================
+    // ПРИВАТНЫЕ МЕТОДЫ
+    // ==========================================
 
     _emit(event = 'navigation:state_changed', data = null) {
         if (this.eventBus) {
@@ -369,6 +445,7 @@ class NavigationState {
             this.openProfile();
         });
 
+        // ✅ Синхронизируем состояние сайдбара
         this.eventBus.on('drawer:state_changed', (data) => {
             this._state.isDrawerOpen = data.isOpen;
             this._updateBackButton();
@@ -394,4 +471,4 @@ if (document.readyState === 'loading') {
     }
 }
 
-console.log('✅ NavigationState v5.3.0 загружен');
+console.log('✅ NavigationState v6.0.0 загружен');
