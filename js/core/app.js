@@ -1,10 +1,10 @@
 // ============================================
 // js/core/app.js
 // Описание: Инициализация приложения
-// Версия: 7.0.0 - НОВАЯ ЛОГИКА КНОПКИ НАЗАД
+// Версия: 7.1.0 - ИСПРАВЛЕНА СИНХРОНИЗАЦИЯ САЙДБАРА
 // ============================================
 
-console.log('🚀 App v7.0.0 начал загрузку');
+console.log('🚀 App v7.1.0 начал загрузку');
 
 // ==========================================
 // ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
@@ -60,7 +60,7 @@ function showTelegramRequiredScreen() {
                     📲 Открыть в Telegram
                 </a>
                 <div style="margin-top: 24px; font-size: 12px; color: var(--app-text-tertiary, #A89880);">
-                    Версия 7.0.0
+                    Версия 7.1.0
                 </div>
             </div>
         `;
@@ -206,7 +206,7 @@ window.fullDataReload = async function() {
 };
 
 // ==========================================
-// УПРАВЛЕНИЕ САЙДБАРОМ (только эти функции)
+// УПРАВЛЕНИЕ САЙДБАРОМ (ИСПРАВЛЕНО!)
 // ==========================================
 
 window.openDrawer = function() {
@@ -226,7 +226,7 @@ window.openDrawer = function() {
     drawer.classList.add('drawer-anim-in');
     document.body.style.overflow = 'hidden';
     
-    // ✅ Обновляем состояние навигации
+    // ✅ Обновляем состояние навигации (ОБЯЗАТЕЛЬНО!)
     if (window.navigationState) {
         window.navigationState.toggleDrawer(true);
     }
@@ -633,7 +633,7 @@ function appendDrawerNav(container) {
         <div class="drawer-nav-item" id="drawer-clear-cache" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; color: var(--app-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--app-font-family, -apple-system, sans-serif); -webkit-tap-highlight-color: transparent;">
             <i data-lucide="trash" style="width:20px;height:20px;"></i> Очистить кэш
         </div>
-        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.0.0</div>
+        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.1.0</div>
     `;
     
     container.appendChild(nav);
@@ -1342,7 +1342,7 @@ async function initApp() {
     const currentTheme = window.themeManager?.getCurrentTheme() || 'light';
     updateThemeLabel(currentTheme);
 
-    console.log('✅ Приложение v7.0.0 успешно загружено');
+    console.log('✅ Приложение v7.1.0 успешно загружено');
 }
 
 // ==========================================
@@ -1408,4 +1408,4 @@ setTimeout(initLucideIcons, 300);
 window.addEventListener('load', initLucideIcons);
 setTimeout(initLucideIcons, 1000);
 
-console.log('✅ app.js v7.0.0 полностью загружен');
+console.log('✅ app.js v7.1.0 полностью загружен');
