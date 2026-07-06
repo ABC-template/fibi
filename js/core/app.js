@@ -1,13 +1,13 @@
 // ============================================
 // js/core/app.js
-// Описание: Инициализация приложения (с JWT)
-// Версия: 7.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
+// Описание: Инициализация приложения
+// Версия: 7.0.0 - НОВАЯ ЛОГИКА КНОПКИ НАЗАД
 // ============================================
 
 console.log('🚀 App v7.0.0 начал загрузку');
 
 // ==========================================
-// ✅ ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
+// ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
 // ==========================================
 
 function isTelegramWebApp() {
@@ -22,7 +22,7 @@ function isTelegramWebApp() {
 }
 
 // ==========================================
-// ✅ ПОКАЗАТЬ ЗАГЛУШКУ (ВНЕ TELEGRAM)
+// ПОКАЗАТЬ ЗАГЛУШКУ (ВНЕ TELEGRAM)
 // ==========================================
 
 function showTelegramRequiredScreen() {
@@ -167,7 +167,7 @@ async function handleLongOffline() {
 }
 
 // ==========================================
-// ✅ ПОЛНАЯ ПЕРЕЗАГРУЗКА ДАННЫХ
+// ПОЛНАЯ ПЕРЕЗАГРУЗКА ДАННЫХ
 // ==========================================
 
 window.fullDataReload = async function() {
@@ -206,7 +206,7 @@ window.fullDataReload = async function() {
 };
 
 // ==========================================
-// УПРАВЛЕНИЕ САЙДБАРОМ (ЧЕРЕЗ NAVIGATIONSTATE)
+// УПРАВЛЕНИЕ САЙДБАРОМ
 // ==========================================
 
 window.openDrawer = function() {
@@ -224,13 +224,12 @@ window.openDrawer = function() {
     drawer.classList.add('active');
     drawer.classList.remove('drawer-anim-out');
     drawer.classList.add('drawer-anim-in');
+    document.body.style.overflow = 'hidden';
     
-    // ✅ Используем NavigationState для управления сайдбаром
+    // ✅ Обновляем состояние навигации
     if (window.navigationState) {
         window.navigationState.toggleDrawer(true);
     }
-    
-    document.body.style.overflow = 'hidden';
     
     if (window.eventBus) {
         window.eventBus.emit('drawer:state_changed', { isOpen: true });
@@ -252,13 +251,12 @@ window.closeDrawer = function() {
         drawer.classList.remove('active');
         overlay.classList.remove('active');
     }, 300);
+    document.body.style.overflow = '';
     
-    // ✅ Используем NavigationState для управления сайдбаром
+    // ✅ Обновляем состояние навигации
     if (window.navigationState) {
         window.navigationState.toggleDrawer(false);
     }
-    
-    document.body.style.overflow = '';
 };
 
 document.addEventListener('click', function(e) {
@@ -274,41 +272,49 @@ document.addEventListener('click', function(e) {
 });
 
 // ==========================================
-// ✅ ОТКРЫТИЕ ЧАТА (ЧЕРЕЗ NAVIGATIONSTATE)
+// ОТКРЫТИЕ ЧАТА (НОВАЯ ВЕРСИЯ)
 // ==========================================
 
 window.openChat = function(chatId, topic) {
     console.log(`📂 [openChat] Открываем чат: ${chatId} (${topic})`);
     
-    // Закрываем сайдбар
-    const drawer = document.getElementById('drawer');
-    if (drawer?.classList.contains('active')) {
-        window.closeDrawer();
-    }
+    // ✅ САЙДБАР ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ В navigationState.openChat()
     
-    // ✅ Используем NavigationState для открытия чата
-    if (window.navigationState) {
-        window.navigationState.openChat(chatId, topic);
-    } else if (window.eventBus) {
+    if (window.eventBus) {
         window.eventBus.emit('navigation:open_chat', { chatId, topic });
     } else {
-        console.error('❌ NavigationState не найден');
+        console.error('❌ EventBus не найден');
     }
 };
 
 // ==========================================
-// ✅ ВОЗВРАТ В CHATLISTMODULE
+// ВОЗВРАТ В СПИСОК ЧАТОВ
 // ==========================================
 
 window.goToChatList = function() {
     console.log('📂 [goToChatList] Возврат в ChatListModule');
     
-    if (window.navigationState) {
-        window.navigationState.goToChatList();
-    } else if (window.eventBus) {
+    if (window.eventBus) {
         window.eventBus.emit('navigation:go_back');
+    } else if (window.navigationState) {
+        window.navigationState.goToChatList();
     } else if (window.moduleLoader) {
         window.moduleLoader.load('chat-list');
+    }
+};
+
+// ==========================================
+// ПЕРЕХОД В ПРОФИЛЬ
+// ==========================================
+
+window.goToProfile = function() {
+    console.log('👤 [goToProfile] Переход в профиль');
+    window.closeDrawer();
+    
+    if (window.eventBus) {
+        window.eventBus.emit('navigation:open_profile');
+    } else if (window.moduleLoader) {
+        window.moduleLoader.load('profile');
     }
 };
 
@@ -649,12 +655,7 @@ function appendDrawerNav(container) {
     const profileItem = nav.querySelector('#drawer-profile');
     if (profileItem) {
         profileItem.addEventListener('click', function() {
-            // ✅ Используем NavigationState для перехода в профиль
-            if (window.navigationState) {
-                window.navigationState.navigate('profile');
-            } else {
-                window.goToProfile();
-            }
+            window.goToProfile();
         });
     }
     
@@ -911,19 +912,8 @@ function updateThemeLabel(theme) {
 
 window.goToTasks = function() {
     window.closeDrawer();
-    if (window.navigationState) {
-        window.navigationState.navigate('tasks');
-    } else if (window.moduleLoader) {
+    if (window.moduleLoader) {
         window.moduleLoader.load('tasks');
-    }
-};
-
-window.goToProfile = function() {
-    window.closeDrawer();
-    if (window.navigationState) {
-        window.navigationState.navigate('profile');
-    } else if (window.moduleLoader) {
-        window.moduleLoader.load('profile');
     }
 };
 
@@ -1076,7 +1066,7 @@ function setupGlobalEventSubscriptions() {
 }
 
 // ==========================================
-// ✅ ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+// ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
 // ==========================================
 
 async function initApp() {
@@ -1171,14 +1161,12 @@ async function initApp() {
     updateCoinsDisplay();
     updateDrawerTrashCount();
 
-    // ПОКАЗЫВАЕМ ХЭДЕР
     const header = document.getElementById('header');
     if (header) {
         header.classList.remove('hidden');
         header.style.display = 'flex';
     }
 
-    // Пустой заголовок при старте
     if (window.headerManager) {
         window.headerManager.reset();
     }
@@ -1290,7 +1278,7 @@ async function initApp() {
     }
 
     // ==========================================
-    // ✅ ЗАГРУЖАЕМ СТАРТОВЫЙ МОДУЛЬ
+    // ЗАГРУЖАЕМ СТАРТОВЫЙ МОДУЛЬ
     // ==========================================
     if (window.moduleLoader) {
         await window.moduleLoader.load('chat-list', {}, { silent: true });
@@ -1299,7 +1287,7 @@ async function initApp() {
     }
 
     // ==========================================
-    // ✅ АВТОМАТИЧЕСКАЯ ОЧИСТКА ПУСТЫХ ЧАТОВ
+    // АВТОМАТИЧЕСКАЯ ОЧИСТКА ПУСТЫХ ЧАТОВ
     // ==========================================
     setInterval(() => {
         if (window.chatUI) {
@@ -1311,7 +1299,7 @@ async function initApp() {
     }, 5 * 60 * 1000);
 
     // ==========================================
-    // ✅ НОВЫЙ ЧАТ
+    // НОВЫЙ ЧАТ
     // ==========================================
     window.handleNewChatClick = function() {
         const activeFilter = window.profileUI?.currentFilter || 'all';
