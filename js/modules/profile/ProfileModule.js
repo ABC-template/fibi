@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/profile/ProfileModule.js
 // Описание: Полноценная страница профиля
-// Версия: 2.1.0 - УПРАВЛЕНИЕ ЗАГОЛОВКОМ ЧЕРЕЗ HEADERMANAGER
+// Версия: 3.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
 // ============================================
 
 class ProfileModule {
@@ -11,6 +11,7 @@ class ProfileModule {
         this._subscriptions = [];
         this.eventBus = window.eventBus;
         this.headerManager = window.headerManager;
+        this.navigationState = window.navigationState;
     }
 
     async init() {
@@ -39,20 +40,7 @@ class ProfileModule {
                     padding-bottom: 12px;
                     border-bottom: 1px solid var(--app-border-color-light);
                 ">
-                    <button onclick="window.goBackFromProfile()" style="
-                        background: transparent;
-                        border: none;
-                        color: var(--app-text-secondary);
-                        cursor: pointer;
-                        padding: 4px;
-                        border-radius: 8px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: all 0.2s ease;
-                    ">
-                        <i data-lucide="arrow-left" style="width:24px;height:24px;"></i>
-                    </button>
+                    <!-- ❌ УДАЛЕНА РУЧНАЯ КНОПКА НАЗАД -->
                     <h2 style="
                         font-size: 20px;
                         font-weight: 700;
@@ -400,8 +388,8 @@ class ProfileModule {
         // Подписываемся на события
         this._subscribeToEvents();
 
-        // Показываем BackButton
-        this._showBackButton();
+        // ❌ УДАЛЯЕМ ВЫЗОВ _showBackButton()
+        // Системная кнопка управляется централизованно через BackButtonManager
 
         setTimeout(() => {
             if (typeof lucide !== 'undefined') {
@@ -410,7 +398,7 @@ class ProfileModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ ProfileModule v2.1.0 инициализирован');
+        console.log('✅ ProfileModule v3.0.0 инициализирован (убраны ручные кнопки)');
     }
 
     // ==========================================
@@ -550,30 +538,8 @@ class ProfileModule {
         if (favEl) favEl.textContent = favorites.length || 0;
     }
 
-    // ==========================================
-    // BACKBUTTON
-    // ==========================================
-
-    _showBackButton() {
-        const tg = window.Telegram?.WebApp;
-        if (!tg?.BackButton) return;
-
-        tg.BackButton.show();
-        tg.BackButton.offClick();
-        tg.BackButton.onClick(() => {
-            window.goBackFromProfile();
-        });
-        console.log('🔙 BackButton показан (профиль)');
-    }
-
-    _hideBackButton() {
-        const tg = window.Telegram?.WebApp;
-        if (!tg?.BackButton) return;
-
-        tg.BackButton.hide();
-        tg.BackButton.offClick();
-        console.log('🔙 BackButton скрыт (профиль)');
-    }
+    // ❌ УДАЛЕНЫ МЕТОДЫ _showBackButton() и _hideBackButton()
+    // Теперь системная кнопка управляется централизованно
 
     // ==========================================
     // УПРАВЛЕНИЕ МОДУЛЕМ
@@ -596,8 +562,8 @@ class ProfileModule {
         this.updateProfileData();
         this.updateStats();
 
-        // Показываем BackButton
-        this._showBackButton();
+        // ❌ УДАЛЯЕМ ВЫЗОВ _showBackButton()
+        // Системная кнопка управляется централизованно через NavigationState
 
         if (window.navigation) {
             window.navigation.hide(); // Скрываем нижнюю навигацию
@@ -607,7 +573,8 @@ class ProfileModule {
     }
 
     hide() {
-        this._hideBackButton();
+        // ❌ УДАЛЯЕМ ВЫЗОВ _hideBackButton()
+        // Системная кнопка управляется централизованно
 
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
@@ -716,4 +683,4 @@ window.clearCacheFromProfile = function() {
     }
 };
 
-console.log('✅ ProfileModule v2.1.0 загружен (управление заголовком через HeaderManager)');
+console.log('✅ ProfileModule v3.0.0 загружен (убраны ручные кнопки назад)');
