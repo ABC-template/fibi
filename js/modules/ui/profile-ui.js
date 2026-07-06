@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/ui/profile-ui.js
 // Описание: Работа с модалками (Избранное, Корзина)
-// Версия: 5.2.0 - ГАРАНТИРОВАННОЕ ЗАКРЫТИЕ
+// Версия: 6.0.0 - ИСПРАВЛЕНО ЗАКРЫТИЕ САЙДБАРА
 // ============================================
 
 class ProfileUI {
@@ -117,25 +117,33 @@ class ProfileUI {
         return html;
     }
 
-    // ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: гарантированное закрытие
+    // ==========================================
+    // ОТКРЫТИЕ ЧАТА ИЗ ИЗБРАННОГО
+    // ✅ Закрываем модалку → закрываем сайдбар → открываем чат
+    // ==========================================
+
     _openChatFromFavorite(chatId, topic, msgId) {
         console.log(`⭐ [favorite] Открываем чат из избранного: ${chatId}`);
         
-        // ✅ 1. ФИЗИЧЕСКИ закрываем модалку (forceClose - мгновенно)
+        // ✅ 1. ФИЗИЧЕСКИ закрываем модалку
         if (window.modalManager) {
             window.modalManager.forceClose();
         }
         
-        // ✅ 2. ФИЗИЧЕСКИ закрываем сайдбар
-        const drawer = document.getElementById('drawer');
-        const overlay = document.getElementById('drawer-overlay');
-        if (drawer?.classList.contains('active')) {
-            drawer.classList.remove('active');
-            overlay?.classList.remove('active');
-            document.body.style.overflow = '';
+        // ✅ 2. ФИЗИЧЕСКИ закрываем сайдбар через closeDrawer()
+        if (window.closeDrawer) {
+            window.closeDrawer();
+        } else {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            if (drawer?.classList.contains('active')) {
+                drawer.classList.remove('active');
+                overlay?.classList.remove('active');
+                document.body.style.overflow = '';
+            }
         }
         
-        // ✅ 3. Обновляем состояние navigationState
+        // ✅ 3. Обновляем состояние
         if (this.navigationState) {
             this.navigationState._state.isDrawerOpen = false;
             this.navigationState._state.modalStack = [];
@@ -493,4 +501,4 @@ window.showContextModal = function(chatId) {
     }
 };
 
-console.log('✅ ProfileUI v5.2.0 загружен');
+console.log('✅ ProfileUI v6.0.0 загружен');
