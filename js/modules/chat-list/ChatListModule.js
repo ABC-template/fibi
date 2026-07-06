@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/chat-list/ChatListModule.js
 // Описание: Список чатов (стартовый экран раздела Versatile)
-// Версия: 3.0.0 - НЕ ПОДПИСЫВАЕТСЯ НА НАВИГАЦИЮ
+// Версия: 4.0.0 - ИСПОЛЬЗУЕТ НОВУЮ НАВИГАЦИЮ
 // ============================================
 
 class ChatListModule {
@@ -20,12 +20,9 @@ class ChatListModule {
     async init() {
         if (this.isInitialized) return;
         
-        // ✅ НЕ ПОДПИСЫВАЕМСЯ НА navigation:state_changed
-        // Только на изменения данных чатов
         this._subscribeToDataEvents();
-        
         this.isInitialized = true;
-        console.log('✅ ChatListModule v3.0.0 инициализирован');
+        console.log('✅ ChatListModule v4.0.0 инициализирован');
     }
 
     // ==========================================
@@ -35,36 +32,28 @@ class ChatListModule {
     show(params = {}) {
         console.log('📱 ChatListModule.show()');
         
-        // ✅ НЕТ ПРОВЕРКИ! Просто показываем себя
-        // ModuleLoader уже скрыл все остальные модули
-        
-        // Рендерим если нужно
         if (!this._rendered) {
             this._render();
         } else {
             this._refreshContent();
         }
 
-        // Показываем контейнер
         this.container.classList.remove('hidden');
         this.container.style.display = 'flex';
         this.container.style.flexDirection = 'column';
         this.container.style.height = '100%';
         this.container.style.width = '100%';
 
-        // Пустой заголовок
         if (this.headerManager) {
             this.headerManager.setTitle(null);
             this.headerManager.setActions([]);
         }
 
-        // Показываем навигацию
         if (window.navigation) {
             window.navigation.show();
             window.navigation.setActive('chat-list');
         }
 
-        // Обновляем иконки
         setTimeout(() => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
@@ -305,7 +294,6 @@ class ChatListModule {
                 </div>
             `;
             
-            // ✅ Открываем чат через событие
             item.addEventListener('click', () => {
                 if (this.eventBus) {
                     this.eventBus.emit('navigation:open_chat', {
@@ -345,11 +333,10 @@ class ChatListModule {
     }
 
     // ==========================================
-    // ПОДПИСКА НА СОБЫТИЯ ДАННЫХ (НЕ НАВИГАЦИИ!)
+    // ПОДПИСКА НА СОБЫТИЯ
     // ==========================================
 
     _subscribeToDataEvents() {
-        // Только обновление данных чатов
         const update = () => {
             if (this._rendered) {
                 this._refreshContent();
@@ -362,7 +349,7 @@ class ChatListModule {
         this.eventBus.on('chat:restored', update, this);
         this.eventBus.on('chat:renamed', update, this);
 
-        console.log('📡 ChatListModule подписан на события данных (не навигации)');
+        console.log('📡 ChatListModule подписан на события данных');
     }
 
     // ==========================================
@@ -385,4 +372,4 @@ class ChatListModule {
 }
 
 window.ChatListModule = ChatListModule;
-console.log('✅ ChatListModule v3.0.0 загружен');
+console.log('✅ ChatListModule v4.0.0 загружен');
