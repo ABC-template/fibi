@@ -226,7 +226,7 @@ window.openDrawer = function() {
     drawer.classList.add('drawer-anim-in');
     document.body.style.overflow = 'hidden';
     
-    // ✅ ОБЯЗАТЕЛЬНО обновляем состояние навигации
+    // ✅ Обновляем состояние навигации (только состояние, DOM уже обновлён)
     if (window.navigationState) {
         window.navigationState.toggleDrawer(true);
     }
@@ -241,22 +241,25 @@ window.closeDrawer = function() {
     const drawer = document.getElementById('drawer');
     if (!overlay || !drawer) return;
     
+    // ✅ Сначала обновляем состояние
+    if (window.navigationState) {
+        window.navigationState.toggleDrawer(false);
+    }
+    
     if (window.eventBus) {
         window.eventBus.emit('drawer:state_changed', { isOpen: false });
     }
     
+    // ✅ Затем физически закрываем с анимацией
     drawer.classList.remove('drawer-anim-in');
     drawer.classList.add('drawer-anim-out');
     setTimeout(() => {
         drawer.classList.remove('active');
         overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        // Убираем класс анимации после завершения
+        drawer.classList.remove('drawer-anim-out');
     }, 300);
-    document.body.style.overflow = '';
-    
-    // ✅ Обновляем состояние навигации
-    if (window.navigationState) {
-        window.navigationState.toggleDrawer(false);
-    }
 };
 
 document.addEventListener('click', function(e) {
