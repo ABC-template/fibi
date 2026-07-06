@@ -1,7 +1,7 @@
 // ============================================
 // js/core/modal-manager.js
 // Описание: Универсальный менеджер модалок
-// Версия: 1.3.0 - ИНТЕГРАЦИЯ С BACKBUTTONMANAGER
+// Версия: 2.0.0 - ИНТЕГРАЦИЯ С navigationState
 // ============================================
 
 class ModalManager {
@@ -14,11 +14,12 @@ class ModalManager {
         this.footer = document.getElementById('modal-footer');
         this.closeBtn = document.getElementById('modal-close');
         this.eventBus = window.eventBus;
+        this.navigationState = window.navigationState;
         
         this._isOpen = false;
         this._callbacks = {};
+        this._modalId = null;
         this._wasDrawerOpen = false;
-        this._drawerState = null;
         this._isClosing = false;
         
         this._initEvents();
@@ -43,14 +44,28 @@ class ModalManager {
             }
         });
 
-        // Закрытие по системной кнопке "Назад" (через событие)
-        // BackButtonManager сам решает, закрывать ли модалку
-        document.addEventListener('backbutton', () => {
-            // Модалка закрывается только через крестик или оверлей
-            // BackButton не трогаем
-        });
+        // Подписка на событие закрытия через кнопку "Назад"
+        if (this.eventBus) {
+            this.eventBus.on('modal:state_changed', (data) => {
+                if (data && data.action === 'back' && data.isOpen === false) {
+                    // Модалка закрыта через кнопку "Назад"
+                    this._handleBackClose();
+                }
+            }, this);
+        }
 
-        console.log('✅ ModalManager v1.3.0 инициализирован');
+        console.log('✅ ModalManager v2.0.0 инициализирован');
+    }
+
+    // ==========================================
+    // ОБРАБОТКА ЗАКРЫТИЯ ЧЕРЕЗ КНОПКУ "НАЗАД"
+    // ==========================================
+
+    _handleBackClose() {
+        if (this._isOpen && !this._isClosing) {
+            console.log('📱 Модалка закрыта через кнопку "Назад"');
+            this.close();
+        }
     }
 
     // ==========================================
@@ -66,26 +81,21 @@ class ModalManager {
             onClose = null,
             onSave = null,
             onCancel = null,
-            showFooter = false
+            showFooter = false,
+            modalId = 'default'
         } = options;
 
-        // Сбрасываем флаг закрытия
         this._isClosing = false;
 
         // Сохраняем колбэки
         this._callbacks = { onOpen, onClose, onSave, onCancel };
+        this._modalId = modalId;
 
         // Запоминаем состояние сайдбара
         const drawer = document.getElementById('drawer');
         const overlay = document.getElementById('drawer-overlay');
         
         this._wasDrawerOpen = drawer?.classList.contains('active') || false;
-        
-        this._drawerState = {
-            isOpen: this._wasDrawerOpen,
-            overlayActive: overlay?.classList.contains('active') || false,
-            bodyOverflow: document.body.style.overflow
-        };
 
         // Если сайдбар открыт — блокируем его
         if (this._wasDrawerOpen && drawer) {
@@ -150,7 +160,7 @@ class ModalManager {
 
         // ✅ Отправляем событие об открытии модалки
         if (this.eventBus) {
-            this.eventBus.emit('modal:state_changed', { isOpen: true });
+            this.eventBus.emit('modal:open', { modalId: this._modalId });
         }
 
         // Создаём иконки Lucide внутри модалки
@@ -165,7 +175,7 @@ class ModalManager {
             this._callbacks.onOpen();
         }
 
-        console.log(`📱 Модалка открыта: ${title} (сайдбар был ${this._wasDrawerOpen ? 'открыт' : 'закрыт'})`);
+        console.log(`📱 Модалка открыта: ${title} (id: ${this._modalId})`);
     }
 
     // ==========================================
@@ -194,19 +204,17 @@ class ModalManager {
                 drawer.style.opacity = '1';
             }
 
-            // Восстанавливаем состояние body
-            if (this._drawerState && this._drawerState.bodyOverflow) {
-                document.body.style.overflow = this._drawerState.bodyOverflow;
-            } else {
-                document.body.style.overflow = '';
-            }
+            document.body.style.overflow = '';
 
             this._isOpen = false;
             this._isClosing = false;
 
             // ✅ Отправляем событие о закрытии модалки
             if (this.eventBus) {
-                this.eventBus.emit('modal:state_changed', { isOpen: false });
+                this.eventBus.emit('modal:close', { 
+                    modalId: this._modalId,
+                    action: 'close'
+                });
             }
 
             // Очищаем тело модалки
@@ -221,7 +229,7 @@ class ModalManager {
 
             // Очищаем колбэки
             this._callbacks = {};
-            this._drawerState = null;
+            this._modalId = null;
 
             console.log('📱 Модалка закрыта');
         }, 300);
@@ -233,6 +241,10 @@ class ModalManager {
 
     isOpen() {
         return this._isOpen;
+    }
+
+    getModalId() {
+        return this._modalId;
     }
 
     // ==========================================
@@ -314,10 +326,13 @@ class ModalManager {
             this.footer.innerHTML = '';
             this.footer.classList.add('hidden');
             this._callbacks = {};
-            this._drawerState = null;
+            this._modalId = null;
             
             if (this.eventBus) {
-                this.eventBus.emit('modal:state_changed', { isOpen: false });
+                this.eventBus.emit('modal:close', { 
+                    modalId: this._modalId,
+                    action: 'force'
+                });
             }
             
             console.log('📱 Модалка принудительно закрыта');
@@ -325,7 +340,10 @@ class ModalManager {
     }
 }
 
-// Создаём глобальный экземпляр
+// ==========================================
+// СОЗДАЕМ ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР
+// ==========================================
+
 window.ModalManager = ModalManager;
 window.modalManager = new ModalManager();
 
@@ -338,4 +356,4 @@ window.closeModal = function() {
     window.modalManager.close();
 };
 
-console.log('✅ ModalManager v1.3.0 загружен');
+console.log('✅ ModalManager v2.0.0 загружен');
