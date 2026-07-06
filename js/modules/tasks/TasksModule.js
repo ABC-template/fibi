@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/tasks/TasksModule.js 
 // Описание: Модуль заданий (геймификация)
-// Версия: 1.3.0 - УПРАВЛЕНИЕ ЗАГОЛОВКОМ ЧЕРЕЗ HEADERMANAGER
+// Версия: 2.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
 // ============================================
 
 class TasksModule {
@@ -10,6 +10,7 @@ class TasksModule {
         this.isInitialized = false;
         this._isInQuest = false;
         this.headerManager = window.headerManager;
+        this.navigationState = window.navigationState;
     }
 
     async init() {
@@ -77,7 +78,7 @@ class TasksModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ TasksModule v1.3.0 инициализирован');
+        console.log('✅ TasksModule v2.0.0 инициализирован');
     }
 
     render() {
@@ -229,13 +230,8 @@ class TasksModule {
         const quest = window.tasksStore.dailyQuests.find(q => q.id === questId);
         if (!quest || !quest.completed || quest.claimed) return;
 
-        // ✅ При открытии задания — показываем заголовок и BackButton
-        if (this.headerManager) {
-            this.headerManager.setTitle(`Задание: ${quest.title}`);
-            this.headerManager.setActions([]);
-        }
-        this._showBackButton(questId);
-        this._isInQuest = true;
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+        // Задания — это стартовая страница, кнопка назад не нужна
 
         window.tasksStore.addBalance(quest.reward, `Задание: ${quest.title}`);
         quest.claimed = true;
@@ -246,27 +242,14 @@ class TasksModule {
         if (window.uiRenderer) {
             window.uiRenderer.showToast(`🎉 +${quest.reward} монет!`, 'success', 1500);
         }
-
-        // ✅ Скрываем BackButton и возвращаем пустой заголовок после завершения
-        this._hideBackButton();
-        this._isInQuest = false;
-        if (this.headerManager) {
-            this.headerManager.setTitle(null);
-            this.headerManager.setActions([]);
-        }
     }
 
     claimAchievement(achievementId) {
         const ach = window.tasksStore.achievements.find(a => a.id === achievementId);
         if (!ach || !ach.unlocked || ach.claimed) return;
 
-        // ✅ При открытии достижения — показываем заголовок и BackButton
-        if (this.headerManager) {
-            this.headerManager.setTitle(`Достижение: ${ach.title}`);
-            this.headerManager.setActions([]);
-        }
-        this._showBackButton(achievementId);
-        this._isInQuest = true;
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+        // Достижения — это стартовая страница, кнопка назад не нужна
 
         ach.claimed = true;
         window.tasksStore.save();
@@ -275,14 +258,6 @@ class TasksModule {
         
         if (window.uiRenderer) {
             window.uiRenderer.showToast(`🏆 Достижение получено!`, 'success', 1500);
-        }
-
-        // ✅ Скрываем BackButton и возвращаем пустой заголовок после завершения
-        this._hideBackButton();
-        this._isInQuest = false;
-        if (this.headerManager) {
-            this.headerManager.setTitle(null);
-            this.headerManager.setActions([]);
         }
     }
 
@@ -314,40 +289,8 @@ class TasksModule {
         }
     }
 
-    // ==========================================
-    // ✅ BACKBUTTON
-    // ==========================================
-
-    _showBackButton(questId) {
-        const tg = window.Telegram?.WebApp;
-        if (!tg?.BackButton) return;
-        
-        tg.BackButton.show();
-        tg.BackButton.offClick();
-        tg.BackButton.onClick(() => {
-            this._hideBackButton();
-            this._isInQuest = false;
-            
-            // ✅ Возвращаем пустой заголовок
-            if (this.headerManager) {
-                this.headerManager.setTitle(null);
-                this.headerManager.setActions([]);
-            }
-            
-            // Возврат на стартовую страницу заданий
-            this.render();
-        });
-        console.log(`🔙 BackButton показан (задание: ${questId})`);
-    }
-
-    _hideBackButton() {
-        const tg = window.Telegram?.WebApp;
-        if (!tg?.BackButton) return;
-        
-        tg.BackButton.hide();
-        tg.BackButton.offClick();
-        console.log('🔙 BackButton скрыт (задания)');
-    }
+    // ❌ УДАЛЕНЫ МЕТОДЫ _showBackButton() и _hideBackButton()
+    // Задания — всегда стартовая страница
 
     // ==========================================
     // УПРАВЛЕНИЕ МОДУЛЕМ
@@ -360,18 +303,14 @@ class TasksModule {
         this.container.style.height = '100%';
         this.container.style.width = '100%';
         
-        // Если задание открыто — показываем заголовок и BackButton
-        if (this._isInQuest) {
-            // Заголовок уже установлен в claimQuest
-            this._showBackButton('active');
-        } else {
-            // ✅ Пустой заголовок для стартовой страницы
-            if (this.headerManager) {
-                this.headerManager.setTitle(null);
-                this.headerManager.setActions([]);
-            }
-            this._hideBackButton();
+        // ✅ Пустой заголовок для стартовой страницы
+        if (this.headerManager) {
+            this.headerManager.setTitle(null);
+            this.headerManager.setActions([]);
         }
+        
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
+        // Задания всегда стартовая страница
         
         this.render();
         
@@ -381,9 +320,7 @@ class TasksModule {
     }
 
     hide() {
-        // ✅ Скрываем BackButton при скрытии модуля
-        this._hideBackButton();
-        this._isInQuest = false;
+        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
         
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
@@ -392,4 +329,4 @@ class TasksModule {
 
 window.TasksModule = TasksModule;
 
-console.log('✅ TasksModule v1.3.0 загружен (управление заголовком через HeaderManager)');
+console.log('✅ TasksModule v2.0.0 загружен (убраны ручные кнопки)');
