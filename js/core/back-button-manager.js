@@ -1,7 +1,7 @@
 // ============================================
 // js/core/back-button-manager.js
 // Описание: Управление BackButton через NavigationState
-// Версия: 3.0.0
+// Версия: 4.0.0 - УПРОЩЕННАЯ ЛОГИКА (только по факту нахождения)
 // ============================================
 
 class BackButtonManager {
@@ -56,7 +56,7 @@ class BackButtonManager {
             this._handleBackPress();
         });
 
-        console.log('✅ BackButtonManager v3.0.0 инициализирован');
+        console.log('✅ BackButtonManager v4.0.0 инициализирован');
     }
 
     // ==========================================
@@ -77,33 +77,34 @@ class BackButtonManager {
         const state = this.navigationState?.current;
         if (!state) return false;
 
-        // 1. Сайдбар открыт?
-        if (state.isDrawerOpen) {
+        // ==========================================
+        // ✅ 1. САЙДБАР ИЛИ МОДАЛКА ОТКРЫТЫ
+        // ==========================================
+        if (state.isDrawerOpen || state.isModalOpen) {
             return true;
         }
 
-        // 2. Модалка открыта?
-        if (state.isModalOpen) {
-            return true;
+        // ==========================================
+        // ✅ 2. СТАРТОВЫЕ СТРАНИЦЫ РАЗДЕЛОВ (БЕЗ КНОПКИ)
+        // ==========================================
+        const startPages = ['dashboard', 'chat-list', 'organizer', 'tasks'];
+        
+        // Проверяем, на стартовой ли мы странице
+        if (startPages.includes(state.module)) {
+            // Для GamesModule проверяем режим
+            if (state.module === 'games' && state.params?.gameMode === 'list') {
+                return false;
+            }
+            // Если мы просто на стартовой странице
+            if (state.module !== 'games') {
+                return false;
+            }
         }
 
-        // 3. Есть история?
-        if (state.hasHistory) {
-            return true;
-        }
-
-        // 4. Специальные модули
-        if (state.module === 'chat' || state.module === 'profile') {
-            return true;
-        }
-
-        // 5. Любой модуль, кроме dashboard, chat-list, games, tasks
-        const noBackModules = ['dashboard', 'chat-list', 'games', 'tasks', 'organizer'];
-        if (!noBackModules.includes(state.module)) {
-            return true;
-        }
-
-        return false;
+        // ==========================================
+        // ✅ 3. ВСЁ ОСТАЛЬНОЕ — ВНУТРЕННИЕ СТРАНИЦЫ (С КНОПКОЙ)
+        // ==========================================
+        return true;
     }
 
     _show() {
@@ -169,4 +170,4 @@ window.refreshBackButton = function() {
     }
 };
 
-console.log('✅ BackButtonManager v3.0.0 загружен');
+console.log('✅ BackButtonManager v4.0.0 загружен');
