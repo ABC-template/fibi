@@ -296,28 +296,31 @@ class TasksModule {
     // УПРАВЛЕНИЕ МОДУЛЕМ
     // ==========================================
 
-    show() {
-        this.container.classList.remove('hidden');
-        this.container.style.display = 'flex';
-        this.container.style.flexDirection = 'column';
-        this.container.style.height = '100%';
-        this.container.style.width = '100%';
-        
-        // ✅ Пустой заголовок для стартовой страницы
-        if (this.headerManager) {
-            this.headerManager.setTitle(null);
-            this.headerManager.setActions([]);
-        }
-        
-        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
-        // Задания всегда стартовая страница
-        
-        this.render();
-        
-        if (window.navigation) {
-            window.navigation.show();
-        }
+show() {
+    // ✅ Проверяем, не показан ли уже модуль
+    if (this.container.classList.contains('hidden') === false) {
+        console.log('📱 TasksModule уже показан');
+        return;
     }
+    
+    this.container.classList.remove('hidden');
+    this.container.style.display = 'flex';
+    this.container.style.flexDirection = 'column';
+    this.container.style.height = '100%';
+    this.container.style.width = '100%';
+    
+    if (this.headerManager) {
+        this.headerManager.setTitle(null);
+        this.headerManager.setActions([]);
+    }
+    
+    this.render();
+    
+    if (window.navigation) {
+        window.navigation.show();
+        window.navigation.setActive('tasks');  // ✅ Устанавливаем активную вкладку
+    }
+}
 
     hide() {
         // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
