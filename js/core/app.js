@@ -922,13 +922,23 @@ function updateThemeLabel(theme) {
 }
 
 // ==========================================
-// ПЕРЕХОДЫ
+// ПЕРЕХОД В ЗАДАНИЯ (через навигацию)
 // ==========================================
 
 window.goToTasks = function() {
-    window.closeDrawer();
-    if (window.moduleLoader) {
+    console.log('🪙 [goToTasks] Переход в задания');
+    window.closeDrawer({ instant: true });
+    
+    // ✅ Используем NavigationState для перехода
+    if (window.navigationState) {
+        window.navigationState.navigate('tasks', {}, { addToHistory: true });
+    } else if (window.moduleLoader) {
         window.moduleLoader.load('tasks');
+    }
+    
+    // ✅ Обновляем активную вкладку
+    if (window.navigation) {
+        window.navigation.setActive('tasks');
     }
 };
 
