@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/tasks/TasksModule.js 
 // Описание: Модуль заданий (геймификация)
-// Версия: 2.0.0 - УБРАНЫ РУЧНЫЕ КНОПКИ НАЗАД
+// Версия: 2.1.0 - ИСПРАВЛЕНО ПОВТОРНОЕ ОТКРЫТИЕ
 // ============================================
 
 class TasksModule {
@@ -78,7 +78,7 @@ class TasksModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ TasksModule v2.0.0 инициализирован');
+        console.log('✅ TasksModule v2.1.0 инициализирован');
     }
 
     render() {
@@ -230,9 +230,6 @@ class TasksModule {
         const quest = window.tasksStore.dailyQuests.find(q => q.id === questId);
         if (!quest || !quest.completed || quest.claimed) return;
 
-        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
-        // Задания — это стартовая страница, кнопка назад не нужна
-
         window.tasksStore.addBalance(quest.reward, `Задание: ${quest.title}`);
         quest.claimed = true;
         window.tasksStore.save();
@@ -247,9 +244,6 @@ class TasksModule {
     claimAchievement(achievementId) {
         const ach = window.tasksStore.achievements.find(a => a.id === achievementId);
         if (!ach || !ach.unlocked || ach.claimed) return;
-
-        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
-        // Достижения — это стартовая страница, кнопка назад не нужна
 
         ach.claimed = true;
         window.tasksStore.save();
@@ -289,42 +283,35 @@ class TasksModule {
         }
     }
 
-    // ❌ УДАЛЕНЫ МЕТОДЫ _showBackButton() и _hideBackButton()
-    // Задания — всегда стартовая страница
-
     // ==========================================
     // УПРАВЛЕНИЕ МОДУЛЕМ
     // ==========================================
 
-show() {
-    // ✅ Проверяем, не показан ли уже модуль
-    if (this.container.classList.contains('hidden') === false) {
-        console.log('📱 TasksModule уже показан');
-        return;
+    show() {
+        // ✅ Всегда показываем и обновляем содержимое
+        // Убираем проверку, которая мешала повторному открытию
+        
+        this.container.classList.remove('hidden');
+        this.container.style.display = 'flex';
+        this.container.style.flexDirection = 'column';
+        this.container.style.height = '100%';
+        this.container.style.width = '100%';
+        
+        if (this.headerManager) {
+            this.headerManager.setTitle(null);
+            this.headerManager.setActions([]);
+        }
+        
+        // ✅ ВСЕГДА перерендериваем при показе
+        this.render();
+        
+        if (window.navigation) {
+            window.navigation.show();
+            window.navigation.setActive('tasks');
+        }
     }
-    
-    this.container.classList.remove('hidden');
-    this.container.style.display = 'flex';
-    this.container.style.flexDirection = 'column';
-    this.container.style.height = '100%';
-    this.container.style.width = '100%';
-    
-    if (this.headerManager) {
-        this.headerManager.setTitle(null);
-        this.headerManager.setActions([]);
-    }
-    
-    this.render();
-    
-    if (window.navigation) {
-        window.navigation.show();
-        window.navigation.setActive('tasks');  // ✅ Устанавливаем активную вкладку
-    }
-}
 
     hide() {
-        // ❌ УДАЛЯЕМ ВСЮ ЛОГИКУ С BACKBUTTON
-        
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
     }
@@ -332,4 +319,4 @@ show() {
 
 window.TasksModule = TasksModule;
 
-console.log('✅ TasksModule v2.0.0 загружен (убраны ручные кнопки)');
+console.log('✅ TasksModule v2.1.0 загружен (исправлено повторное открытие)');
