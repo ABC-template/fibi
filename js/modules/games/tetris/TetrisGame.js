@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/games/tetris/TetrisGame.js
 // Описание: Классический Тетрис (исправленная версия)
-// Версия: 2.0.1 - ИСПРАВЛЕНА ОТРИСОВКА ФИГУР
+// Версия: 2.0.2 - ИСПРАВЛЕНЫ КНОПКИ + LUCIDE ИКОНКИ
 // ============================================
 
 class TetrisGame {
@@ -32,36 +32,15 @@ class TetrisGame {
         this.bestScore = 0;
         this.gamesWon = 0;
         
-        // Фигуры (стандартный набор)
+        // Фигуры
         this.pieces = [
-            { // I
-                shape: [[1, 1, 1, 1]],
-                color: 'I'
-            },
-            { // O
-                shape: [[1, 1], [1, 1]],
-                color: 'O'
-            },
-            { // T
-                shape: [[0, 1, 0], [1, 1, 1]],
-                color: 'T'
-            },
-            { // S
-                shape: [[0, 1, 1], [1, 1, 0]],
-                color: 'S'
-            },
-            { // Z
-                shape: [[1, 1, 0], [0, 1, 1]],
-                color: 'Z'
-            },
-            { // J
-                shape: [[1, 0, 0], [1, 1, 1]],
-                color: 'J'
-            },
-            { // L
-                shape: [[0, 0, 1], [1, 1, 1]],
-                color: 'L'
-            }
+            { shape: [[1, 1, 1, 1]], color: 'I' },
+            { shape: [[1, 1], [1, 1]], color: 'O' },
+            { shape: [[0, 1, 0], [1, 1, 1]], color: 'T' },
+            { shape: [[0, 1, 1], [1, 1, 0]], color: 'S' },
+            { shape: [[1, 1, 0], [0, 1, 1]], color: 'Z' },
+            { shape: [[1, 0, 0], [1, 1, 1]], color: 'J' },
+            { shape: [[0, 0, 1], [1, 1, 1]], color: 'L' }
         ];
         
         // Управление
@@ -101,24 +80,13 @@ class TetrisGame {
 
     init(container) {
         this.container = container;
-        
-        // Загружаем рекорды и статистику
         this._loadStats();
-        
-        // Инициализируем поле
         this._initBoard();
-        
-        // Создаём первую фигуру
         this._spawnPiece();
         this._spawnNextPiece();
-        
-        // Рендерим
         this._render();
-        
-        // Настраиваем управление
         this._setupControls();
         
-        // Сбрасываем состояние игры
         this.score = 0;
         this.lines = 0;
         this.level = 1;
@@ -126,11 +94,11 @@ class TetrisGame {
         this.isRunning = false;
         this.isPaused = false;
         
-        console.log('🧩 Тетрис v2.0.1 инициализирован');
+        console.log('🧩 Тетрис v2.0.2 инициализирован');
     }
 
     // ==========================================
-    // СТАТИСТИКА И РЕКОРДЫ
+    // СТАТИСТИКА
     // ==========================================
 
     _loadStats() {
@@ -176,8 +144,6 @@ class TetrisGame {
         this.lastDropTime = performance.now();
         this.totalGames++;
         this._saveStats();
-        
-        // Запускаем игровой цикл
         this._gameLoop();
         
         console.log('▶️ Тетрис запущен');
@@ -232,7 +198,6 @@ class TetrisGame {
         
         this.animationId = requestAnimationFrame(this._gameLoop);
         
-        // Падение фигуры
         const delta = timestamp - this.lastDropTime;
         const interval = Math.max(80, this.dropInterval - (this.level - 1) * 80);
         
@@ -271,31 +236,31 @@ class TetrisGame {
                         <div class="tetris-info">
                             <div class="tetris-info-row">
                                 <div class="tetris-info-item">
-                                    <span class="icon">🏆</span>
+                                    <i data-lucide="trophy" style="width:14px;height:14px;"></i>
                                     <span class="value" id="tetris-score">0</span>
                                 </div>
                                 <div class="tetris-info-item">
-                                    <span class="icon">📊</span>
+                                    <i data-lucide="align-justify" style="width:14px;height:14px;"></i>
                                     <span class="value" id="tetris-lines">0</span>
                                 </div>
                             </div>
                             <div class="tetris-info-row">
                                 <div class="tetris-info-item">
-                                    <span class="icon">📈</span>
+                                    <i data-lucide="trending-up" style="width:14px;height:14px;"></i>
                                     <span class="value" id="tetris-level">1</span>
                                 </div>
                                 <div class="tetris-info-item">
-                                    <span class="icon">⭐</span>
+                                    <i data-lucide="star" style="width:14px;height:14px;"></i>
                                     <span class="value" id="tetris-high">${this.highScore}</span>
                                 </div>
                             </div>
                             <div class="tetris-info-row" style="border-top: 1px solid var(--app-border-color-light); padding-top: 3px;">
-                                <div class="tetris-actions" style="width: 100%; justify-content: center;">
-                                    <button class="tetris-btn" id="tetris-btn-pause" style="min-width: 32px; min-height: 32px; padding: 2px 6px; font-size: 16px;">
-                                        ⏸️
+                                <div class="tetris-actions" style="width: 100%; justify-content: center; gap: 6px;">
+                                    <button class="tetris-btn" id="tetris-btn-pause" style="min-width: 32px; min-height: 32px; padding: 4px 8px;">
+                                        <i data-lucide="pause" style="width:18px;height:18px;"></i>
                                     </button>
-                                    <button class="tetris-btn danger" id="tetris-btn-reset" style="min-width: 32px; min-height: 32px; padding: 2px 6px; font-size: 16px;">
-                                        🔄
+                                    <button class="tetris-btn danger" id="tetris-btn-reset" style="min-width: 32px; min-height: 32px; padding: 4px 8px;">
+                                        <i data-lucide="rotate-ccw" style="width:18px;height:18px;"></i>
                                     </button>
                                 </div>
                             </div>
@@ -305,11 +270,21 @@ class TetrisGame {
                 
                 <!-- Кнопки управления -->
                 <div class="tetris-controls">
-                    <button class="tetris-btn" data-action="left">◀</button>
-                    <button class="tetris-btn" data-action="rotate">🔄</button>
-                    <button class="tetris-btn" data-action="down">▼</button>
-                    <button class="tetris-btn primary" data-action="drop">⏬</button>
-                    <button class="tetris-btn" data-action="right">▶</button>
+                    <button class="tetris-btn" data-action="left">
+                        <i data-lucide="chevron-left" style="width:24px;height:24px;"></i>
+                    </button>
+                    <button class="tetris-btn" data-action="rotate">
+                        <i data-lucide="rotate-cw" style="width:24px;height:24px;"></i>
+                    </button>
+                    <button class="tetris-btn" data-action="down">
+                        <i data-lucide="chevron-down" style="width:24px;height:24px;"></i>
+                    </button>
+                    <button class="tetris-btn primary" data-action="drop">
+                        <i data-lucide="chevrons-down" style="width:24px;height:24px;"></i>
+                    </button>
+                    <button class="tetris-btn" data-action="right">
+                        <i data-lucide="chevron-right" style="width:24px;height:24px;"></i>
+                    </button>
                 </div>
                 
                 <!-- Оверлей -->
@@ -319,8 +294,12 @@ class TetrisGame {
                         <div class="score" id="tetris-overlay-score">0</div>
                         <div class="sub" id="tetris-overlay-sub"></div>
                         <div class="btn-group" id="tetris-overlay-buttons">
-                            <button class="tetris-btn primary" id="tetris-overlay-primary">▶️ Продолжить</button>
-                            <button class="tetris-btn" id="tetris-overlay-secondary">🔄 Новая игра</button>
+                            <button class="tetris-btn primary" id="tetris-overlay-primary">
+                                <i data-lucide="play" style="width:20px;height:20px;"></i> Продолжить
+                            </button>
+                            <button class="tetris-btn" id="tetris-overlay-secondary">
+                                <i data-lucide="rotate-ccw" style="width:20px;height:20px;"></i> Новая игра
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -338,6 +317,13 @@ class TetrisGame {
         this.pauseBtn = document.getElementById('tetris-btn-pause');
         this.resetBtn = document.getElementById('tetris-btn-reset');
         
+        // Создаем Lucide иконки
+        setTimeout(() => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }, 100);
+        
         // Привязываем кнопки
         this._bindButtons();
         
@@ -350,10 +336,9 @@ class TetrisGame {
     // ==========================================
 
     _renderBoardWithPiece() {
-        // 1. Создаем копию доски
         const displayBoard = this.board.map(row => [...row]);
         
-        // 2. Накладываем гостинг (тень)
+        // Гостинг (тень)
         if (this.currentPiece && this.ghostRow !== null) {
             const { shape, col, color } = this.currentPiece;
             for (let r = 0; r < shape.length; r++) {
@@ -371,7 +356,7 @@ class TetrisGame {
             }
         }
         
-        // 3. Накладываем текущую фигуру
+        // Текущая фигура
         if (this.currentPiece) {
             const { shape, row, col, color } = this.currentPiece;
             for (let r = 0; r < shape.length; r++) {
@@ -387,7 +372,6 @@ class TetrisGame {
             }
         }
         
-        // 4. Генерируем HTML
         let html = '';
         for (let r = 0; r < this.rows; r++) {
             for (let c = 0; c < this.cols; c++) {
@@ -404,7 +388,8 @@ class TetrisGame {
     // ==========================================
 
     _renderPreview() {
-        if (!this.nextPiece) {
+        // ✅ Проверяем, есть ли следующая фигура
+        if (!this.nextPiece || !this.nextPiece.shape || this.nextPiece.shape.length === 0) {
             // Пустая сетка 4x4
             return Array(16).fill('').map(() => 
                 `<div class="tetris-preview-cell"></div>`
@@ -415,8 +400,10 @@ class TetrisGame {
         const color = this.nextPiece.color;
         const flat = [];
         
+        // ✅ Правильно рендерим фигуру в центре сетки 4x4
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
+                // Проверяем, попадает ли текущая позиция в форму фигуры
                 if (r < shape.length && c < shape[0].length && shape[r] && shape[r][c]) {
                     flat.push(`<div class="tetris-preview-cell ${color}"></div>`);
                 } else {
@@ -435,10 +422,8 @@ class TetrisGame {
     _updateUI() {
         if (!this.boardEl) return;
         
-        // ✅ Обновляем поле с фигурой
         this.boardEl.innerHTML = this._renderBoardWithPiece();
         
-        // Обновляем счёт
         if (this.scoreEl) this.scoreEl.textContent = this.score;
         if (this.linesEl) this.linesEl.textContent = this.lines;
         if (this.levelEl) this.levelEl.textContent = this.level;
@@ -449,12 +434,16 @@ class TetrisGame {
             this.previewEl.innerHTML = this._renderPreview();
         }
         
-        // Обновляем кнопку паузы
+        // Обновляем иконки паузы
         if (this.pauseBtn) {
-            this.pauseBtn.textContent = this.isPaused ? '▶️' : '⏸️';
+            this.pauseBtn.innerHTML = this.isPaused 
+                ? '<i data-lucide="play" style="width:18px;height:18px;"></i>'
+                : '<i data-lucide="pause" style="width:18px;height:18px;"></i>';
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, 50);
         }
         
-        // Показываем/скрываем оверлей
         this._updateOverlay();
     }
 
@@ -477,14 +466,14 @@ class TetrisGame {
                     sub.textContent = isNewRecord ? '🏆 Новый рекорд!' : `Рекорд: ${this.highScore}`;
                 }
                 if (primary) {
-                    primary.textContent = '🔄 Играть снова';
+                    primary.innerHTML = '<i data-lucide="rotate-ccw" style="width:20px;height:20px;"></i> Играть снова';
                     primary.onclick = () => {
                         this._resetGame();
                         this.start();
                     };
                 }
                 if (secondary) {
-                    secondary.textContent = '🏠 Выйти';
+                    secondary.innerHTML = '<i data-lucide="home" style="width:20px;height:20px;"></i> Выйти';
                     secondary.onclick = () => {
                         if (window.gamesModule) {
                             window.gamesModule.closeGame();
@@ -496,17 +485,22 @@ class TetrisGame {
                 if (score) score.textContent = `${this.score} очков`;
                 if (sub) sub.textContent = '';
                 if (primary) {
-                    primary.textContent = '▶️ Продолжить';
+                    primary.innerHTML = '<i data-lucide="play" style="width:20px;height:20px;"></i> Продолжить';
                     primary.onclick = () => this.resume();
                 }
                 if (secondary) {
-                    secondary.textContent = '🔄 Новая игра';
+                    secondary.innerHTML = '<i data-lucide="rotate-ccw" style="width:20px;height:20px;"></i> Новая игра';
                     secondary.onclick = () => {
                         this._resetGame();
                         this.start();
                     };
                 }
             }
+            
+            // Обновляем иконки в оверлее
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, 50);
         } else {
             this.overlayEl.style.display = 'none';
         }
@@ -553,7 +547,6 @@ class TetrisGame {
         this.nextPiece = this._getRandomPiece();
         this.ghostRow = this._getGhostRow();
         
-        // Проверка на Game Over
         if (this._collision(this.currentPiece.shape, this.currentPiece.row, this.currentPiece.col)) {
             this.gameOver = true;
             this.isRunning = false;
@@ -598,10 +591,7 @@ class TetrisGame {
             }
         }
         
-        // Проверяем линии
         this._clearLines();
-        
-        // Спавним следующую фигуру
         this._spawnPiece();
         this._updateUI();
     }
@@ -618,15 +608,9 @@ class TetrisGame {
         }
         
         if (cleared > 0) {
-            if (cleared === 4) {
-                this._unlockAchievement('tetris');
-            }
+            if (cleared === 4) this._unlockAchievement('tetris');
+            if (cleared === this.rows) this._unlockAchievement('perfectClear');
             
-            if (cleared === this.rows) {
-                this._unlockAchievement('perfectClear');
-            }
-            
-            // Анимация удаления линий
             const cells = this.boardEl.querySelectorAll('.tetris-cell');
             for (const row of clearedRows) {
                 for (let c = 0; c < this.cols; c++) {
@@ -648,16 +632,13 @@ class TetrisGame {
                 this.score += earned;
                 this.lines += cleared;
                 this.totalLines += cleared;
-                
                 this.level = Math.floor(this.lines / 10) + 1;
                 
                 if (this.lines >= 10) this._unlockAchievement('line10');
                 if (this.lines >= 50) this._unlockAchievement('line50');
                 if (this.lines >= 100) this._unlockAchievement('line100');
-                
                 if (this.score >= 1000) this._unlockAchievement('score1000');
                 if (this.score >= 5000) this._unlockAchievement('score5000');
-                
                 if (this.level >= 5) this._unlockAchievement('level5');
                 if (this.level >= 10) this._unlockAchievement('level10');
                 
@@ -667,8 +648,12 @@ class TetrisGame {
         }
     }
 
+    // ==========================================
+    // ✅ ИСПРАВЛЕНО: ДВИЖЕНИЯ ФИГУР
+    // ==========================================
+
     _movePieceDown() {
-        if (!this.currentPiece || this.gameOver) return;
+        if (!this.currentPiece || this.gameOver || this.isPaused) return;
         
         const { shape, row, col } = this.currentPiece;
         if (!this._collision(shape, row + 1, col)) {
@@ -835,15 +820,9 @@ class TetrisGame {
     // ==========================================
 
     _resetGame() {
-        if (this.lines > 0) {
-            this.totalLines += this.lines;
-        }
-        if (this.score > this.bestScore) {
-            this.bestScore = this.score;
-        }
-        if (this.gameOver && this.lines > 0) {
-            this.gamesWon++;
-        }
+        if (this.lines > 0) this.totalLines += this.lines;
+        if (this.score > this.bestScore) this.bestScore = this.score;
+        if (this.gameOver && this.lines > 0) this.gamesWon++;
         this._saveStats();
         
         this._initBoard();
@@ -866,20 +845,31 @@ class TetrisGame {
     }
 
     // ==========================================
-    // КНОПКИ
+    // ✅ ИСПРАВЛЕНО: КНОПКИ УПРАВЛЕНИЯ
     // ==========================================
 
     _bindButtons() {
+        // ✅ Кнопки управления — каждая делает своё действие
         document.querySelectorAll('.tetris-btn[data-action]').forEach(btn => {
             btn.onclick = (e) => {
                 e.preventDefault();
                 const action = btn.dataset.action;
                 switch(action) {
-                    case 'left': this._movePieceLeft(); break;
-                    case 'right': this._movePieceRight(); break;
-                    case 'rotate': this._rotatePiece(); break;
-                    case 'down': this._movePieceDown(); break;
-                    case 'drop': this._hardDrop(); break;
+                    case 'left': 
+                        this._movePieceLeft(); 
+                        break;
+                    case 'right': 
+                        this._movePieceRight(); 
+                        break;
+                    case 'rotate': 
+                        this._rotatePiece(); 
+                        break;
+                    case 'down': 
+                        this._movePieceDown(); 
+                        break;
+                    case 'drop': 
+                        this._hardDrop(); 
+                        break;
                 }
             };
             btn.addEventListener('touchstart', (e) => {
@@ -887,6 +877,7 @@ class TetrisGame {
             });
         });
         
+        // Пауза
         if (this.pauseBtn) {
             this.pauseBtn.onclick = () => {
                 if (this.gameOver) return;
@@ -899,6 +890,7 @@ class TetrisGame {
             };
         }
         
+        // Сброс
         if (this.resetBtn) {
             this.resetBtn.onclick = () => {
                 if (window.tg?.showConfirm) {
@@ -1071,4 +1063,4 @@ class TetrisGame {
 // Экспортируем в глобальный объект
 window.TetrisGame = TetrisGame;
 
-console.log('✅ TetrisGame v2.0.1 загружен (исправлен рендеринг)');
+console.log('✅ TetrisGame v2.0.2 загружен (исправлены кнопки + Lucide)');
