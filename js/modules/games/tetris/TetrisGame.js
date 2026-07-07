@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/games/tetris/TetrisGame.js
 // Описание: Классический Тетрис (исправленная версия)
-// Версия: 2.0.2 - ИСПРАВЛЕНЫ КНОПКИ + LUCIDE ИКОНКИ
+// Версия: 2.0.3 - ИСПРАВЛЕНЫ КНОПКИ + ВЕРТИКАЛЬНАЯ ПАНЕЛЬ
 // ============================================
 
 class TetrisGame {
@@ -94,7 +94,7 @@ class TetrisGame {
         this.isRunning = false;
         this.isPaused = false;
         
-        console.log('🧩 Тетрис v2.0.2 инициализирован');
+        console.log('🧩 Тетрис v2.0.3 инициализирован');
     }
 
     // ==========================================
@@ -208,7 +208,7 @@ class TetrisGame {
     }
 
     // ==========================================
-    // РЕНДЕРИНГ
+    // ✅ НОВЫЙ РЕНДЕРИНГ С ВЕРТИКАЛЬНОЙ ПАНЕЛЬЮ
     // ==========================================
 
     _render() {
@@ -222,7 +222,7 @@ class TetrisGame {
                         ${this._renderBoardWithPiece()}
                     </div>
                     
-                    <!-- Правая панель -->
+                    <!-- ✅ ПРАВАЯ ПАНЕЛЬ (вертикальная) -->
                     <div class="tetris-side-panel">
                         <!-- Следующая фигура -->
                         <div class="tetris-preview">
@@ -232,58 +232,54 @@ class TetrisGame {
                             </div>
                         </div>
                         
-                        <!-- Информация -->
+                        <!-- ✅ Информация (вертикально) -->
                         <div class="tetris-info">
-                            <div class="tetris-info-row">
-                                <div class="tetris-info-item">
-                                    <i data-lucide="trophy" style="width:14px;height:14px;"></i>
-                                    <span class="value" id="tetris-score">0</span>
-                                </div>
-                                <div class="tetris-info-item">
-                                    <i data-lucide="align-justify" style="width:14px;height:14px;"></i>
-                                    <span class="value" id="tetris-lines">0</span>
-                                </div>
+                            <div class="tetris-info-item">
+                                <i data-lucide="trophy" style="width:16px;height:16px;"></i>
+                                <span class="value" id="tetris-score">0</span>
                             </div>
-                            <div class="tetris-info-row">
-                                <div class="tetris-info-item">
-                                    <i data-lucide="trending-up" style="width:14px;height:14px;"></i>
-                                    <span class="value" id="tetris-level">1</span>
-                                </div>
-                                <div class="tetris-info-item">
-                                    <i data-lucide="star" style="width:14px;height:14px;"></i>
-                                    <span class="value" id="tetris-high">${this.highScore}</span>
-                                </div>
+                            <div class="tetris-info-item">
+                                <i data-lucide="align-justify" style="width:16px;height:16px;"></i>
+                                <span class="value" id="tetris-lines">0</span>
                             </div>
-                            <div class="tetris-info-row" style="border-top: 1px solid var(--app-border-color-light); padding-top: 3px;">
-                                <div class="tetris-actions" style="width: 100%; justify-content: center; gap: 6px;">
-                                    <button class="tetris-btn" id="tetris-btn-pause" style="min-width: 32px; min-height: 32px; padding: 4px 8px;">
-                                        <i data-lucide="pause" style="width:18px;height:18px;"></i>
-                                    </button>
-                                    <button class="tetris-btn danger" id="tetris-btn-reset" style="min-width: 32px; min-height: 32px; padding: 4px 8px;">
-                                        <i data-lucide="rotate-ccw" style="width:18px;height:18px;"></i>
-                                    </button>
-                                </div>
+                            <div class="tetris-info-item">
+                                <i data-lucide="trending-up" style="width:16px;height:16px;"></i>
+                                <span class="value" id="tetris-level">1</span>
                             </div>
+                            <div class="tetris-info-item" style="border-top: 1px solid var(--app-border-color-light); padding-top: 6px; margin-top: 2px;">
+                                <i data-lucide="star" style="width:16px;height:16px;"></i>
+                                <span class="value" id="tetris-high">${this.highScore}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- ✅ Кнопки (вертикально) -->
+                        <div class="tetris-actions">
+                            <button class="tetris-btn" id="tetris-btn-pause" style="width:100%;">
+                                <i data-lucide="pause" style="width:18px;height:18px;"></i>
+                            </button>
+                            <button class="tetris-btn danger" id="tetris-btn-reset" style="width:100%;">
+                                <i data-lucide="rotate-ccw" style="width:18px;height:18px;"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Кнопки управления -->
+                <!-- ✅ КНОПКИ УПРАВЛЕНИЯ (под полем) -->
                 <div class="tetris-controls">
                     <button class="tetris-btn" data-action="left">
-                        <i data-lucide="chevron-left" style="width:24px;height:24px;"></i>
+                        <i data-lucide="chevron-left" style="width:26px;height:26px;"></i>
                     </button>
                     <button class="tetris-btn" data-action="rotate">
-                        <i data-lucide="rotate-cw" style="width:24px;height:24px;"></i>
+                        <i data-lucide="rotate-cw" style="width:26px;height:26px;"></i>
                     </button>
                     <button class="tetris-btn" data-action="down">
-                        <i data-lucide="chevron-down" style="width:24px;height:24px;"></i>
+                        <i data-lucide="chevron-down" style="width:26px;height:26px;"></i>
                     </button>
                     <button class="tetris-btn primary" data-action="drop">
-                        <i data-lucide="chevrons-down" style="width:24px;height:24px;"></i>
+                        <i data-lucide="chevrons-down" style="width:26px;height:26px;"></i>
                     </button>
                     <button class="tetris-btn" data-action="right">
-                        <i data-lucide="chevron-right" style="width:24px;height:24px;"></i>
+                        <i data-lucide="chevron-right" style="width:26px;height:26px;"></i>
                     </button>
                 </div>
                 
@@ -332,7 +328,7 @@ class TetrisGame {
     }
 
     // ==========================================
-    // ✅ ИСПРАВЛЕНО: Рендер доски С фигурой
+    // РЕНДЕР ДОСКИ С ФИГУРОЙ
     // ==========================================
 
     _renderBoardWithPiece() {
@@ -384,13 +380,11 @@ class TetrisGame {
     }
 
     // ==========================================
-    // ✅ ИСПРАВЛЕНО: Рендер следующей фигуры
+    // РЕНДЕР СЛЕДУЮЩЕЙ ФИГУРЫ
     // ==========================================
 
     _renderPreview() {
-        // ✅ Проверяем, есть ли следующая фигура
         if (!this.nextPiece || !this.nextPiece.shape || this.nextPiece.shape.length === 0) {
-            // Пустая сетка 4x4
             return Array(16).fill('').map(() => 
                 `<div class="tetris-preview-cell"></div>`
             ).join('');
@@ -400,10 +394,8 @@ class TetrisGame {
         const color = this.nextPiece.color;
         const flat = [];
         
-        // ✅ Правильно рендерим фигуру в центре сетки 4x4
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
-                // Проверяем, попадает ли текущая позиция в форму фигуры
                 if (r < shape.length && c < shape[0].length && shape[r] && shape[r][c]) {
                     flat.push(`<div class="tetris-preview-cell ${color}"></div>`);
                 } else {
@@ -429,12 +421,10 @@ class TetrisGame {
         if (this.levelEl) this.levelEl.textContent = this.level;
         if (this.highEl) this.highEl.textContent = this.highScore;
         
-        // ✅ Обновляем превью
         if (this.previewEl) {
             this.previewEl.innerHTML = this._renderPreview();
         }
         
-        // Обновляем иконки паузы
         if (this.pauseBtn) {
             this.pauseBtn.innerHTML = this.isPaused 
                 ? '<i data-lucide="play" style="width:18px;height:18px;"></i>'
@@ -497,7 +487,6 @@ class TetrisGame {
                 }
             }
             
-            // Обновляем иконки в оверлее
             setTimeout(() => {
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }, 50);
@@ -649,7 +638,7 @@ class TetrisGame {
     }
 
     // ==========================================
-    // ✅ ИСПРАВЛЕНО: ДВИЖЕНИЯ ФИГУР
+    // ✅ ДВИЖЕНИЯ ФИГУР (исправлены)
     // ==========================================
 
     _movePieceDown() {
@@ -845,11 +834,11 @@ class TetrisGame {
     }
 
     // ==========================================
-    // ✅ ИСПРАВЛЕНО: КНОПКИ УПРАВЛЕНИЯ
+    // ✅ ИСПРАВЛЕНЫ КНОПКИ УПРАВЛЕНИЯ
     // ==========================================
 
     _bindButtons() {
-        // ✅ Кнопки управления — каждая делает своё действие
+        // ✅ Каждая кнопка делает своё действие
         document.querySelectorAll('.tetris-btn[data-action]').forEach(btn => {
             btn.onclick = (e) => {
                 e.preventDefault();
@@ -915,18 +904,29 @@ class TetrisGame {
     _setupControls() {
         document.addEventListener('keydown', this._handleKeyDown);
         document.addEventListener('keyup', this._handleKeyUp);
-        document.addEventListener('touchstart', this._handleTouchStart, { passive: true });
-        document.addEventListener('touchmove', this._handleTouchMove, { passive: true });
-        document.addEventListener('touchend', this._handleTouchEnd, { passive: true });
+        
+        // ✅ Жесты ТОЛЬКО на игровом поле
+        const board = document.getElementById('tetris-board');
+        if (board) {
+            board.addEventListener('touchstart', this._handleTouchStart, { passive: true });
+            board.addEventListener('touchmove', this._handleTouchMove, { passive: true });
+            board.addEventListener('touchend', this._handleTouchEnd, { passive: true });
+        }
+        
         document.addEventListener('visibilitychange', this._handleVisibilityChange);
     }
 
     _removeControls() {
         document.removeEventListener('keydown', this._handleKeyDown);
         document.removeEventListener('keyup', this._handleKeyUp);
-        document.removeEventListener('touchstart', this._handleTouchStart);
-        document.removeEventListener('touchmove', this._handleTouchMove);
-        document.removeEventListener('touchend', this._handleTouchEnd);
+        
+        const board = document.getElementById('tetris-board');
+        if (board) {
+            board.removeEventListener('touchstart', this._handleTouchStart);
+            board.removeEventListener('touchmove', this._handleTouchMove);
+            board.removeEventListener('touchend', this._handleTouchEnd);
+        }
+        
         document.removeEventListener('visibilitychange', this._handleVisibilityChange);
     }
 
@@ -960,11 +960,13 @@ class TetrisGame {
     _handleKeyUp(e) {}
 
     // ==========================================
-    // ТАЧ-УПРАВЛЕНИЕ
+    // ✅ ЖЕСТЫ ТОЛЬКО НА ПОЛЕ
     // ==========================================
 
     _handleTouchStart(e) {
         if (!this.isRunning || this.gameOver || this.isPaused) return;
+        // Проверяем, что касание именно на поле
+        if (!e.target.closest('.tetris-board')) return;
         
         const touch = e.touches[0];
         this.touchStartX = touch.clientX;
@@ -976,6 +978,7 @@ class TetrisGame {
     _handleTouchMove(e) {
         e.preventDefault();
         if (!this.isTouching || !this.isRunning || this.gameOver || this.isPaused) return;
+        if (!e.target.closest('.tetris-board')) return;
         
         const touch = e.touches[0];
         const deltaX = touch.clientX - this.touchStartX;
@@ -1002,6 +1005,7 @@ class TetrisGame {
         this.isTouching = false;
         
         if (!this.isRunning || this.gameOver || this.isPaused) return;
+        if (!e.target.closest('.tetris-board')) return;
         
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -1009,11 +1013,13 @@ class TetrisGame {
         const deltaY = touchEndY - this.touchStartY;
         const elapsed = Date.now() - this.touchStartTime;
         
+        // Тап → поворот
         if (Math.abs(deltaX) < 15 && Math.abs(deltaY) < 15 && elapsed < 300) {
             this._rotatePiece();
             return;
         }
         
+        // Свайп вверх → хард-дроп
         if (deltaY < -40 && Math.abs(deltaY) > Math.abs(deltaX)) {
             this._hardDrop();
         }
@@ -1063,4 +1069,4 @@ class TetrisGame {
 // Экспортируем в глобальный объект
 window.TetrisGame = TetrisGame;
 
-console.log('✅ TetrisGame v2.0.2 загружен (исправлены кнопки + Lucide)');
+console.log('✅ TetrisGame v2.0.3 загружен (вертикальная панель + исправлены кнопки)');
