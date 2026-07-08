@@ -1,7 +1,7 @@
 // ============================================
 // js/core/module-loader.js
 // Описание: Загрузчик модулей с полным управлением видимостью
-// Версия: 4.0.0 - ЕДИНСТВЕННЫЙ КОНТРОЛЛЕР ВИДИМОСТИ
+// Версия: 4.2.0 - ВСЕГДА ВЫЗЫВАЕТ SHOW()
 // ============================================
 
 class ModuleLoader {
@@ -32,7 +32,7 @@ class ModuleLoader {
      * Загрузить модуль (ЕДИНСТВЕННЫЙ МЕТОД УПРАВЛЕНИЯ ВИДИМОСТЬЮ)
      */
     async load(moduleName, params = {}, options = {}) {
-        const { silent = false, replace = false, force = false } = options;
+        const { silent = false, replace = false } = options;
 
         // Защита от повторных вызовов
         if (this._isLoading) {
@@ -95,10 +95,11 @@ class ModuleLoader {
             container.style.width = '100%';
 
             // ==========================================
-            // 5. ВЫЗЫВАЕМ SHOW() У МОДУЛЯ
+            // 5. ✅ ВСЕГДА ВЫЗЫВАЕМ SHOW() У МОДУЛЯ
             // ==========================================
             if (typeof instance.show === 'function') {
                 await instance.show(params);
+                console.log(`✅ show() вызван у модуля ${moduleName}`);
             }
 
             // ==========================================
@@ -118,7 +119,7 @@ class ModuleLoader {
                 });
             }
 
-            console.log(`✅ Модуль загружен: ${moduleName}`, params);
+            console.log(`✅ Модуль загружен и показан: ${moduleName}`, params);
             return instance;
 
         } catch (err) {
@@ -318,4 +319,4 @@ class ModuleLoader {
 window.ModuleLoader = ModuleLoader;
 window.moduleLoader = new ModuleLoader();
 
-console.log('✅ ModuleLoader v4.0.0 загружен');
+console.log('✅ ModuleLoader v4.2.0 загружен (всегда вызывает show())');
