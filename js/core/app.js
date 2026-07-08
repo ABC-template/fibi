@@ -1,10 +1,10 @@
 // ============================================
 // js/core/app.js
 // Описание: Инициализация приложения
-// Версия: 7.2.0 - ИСПРАВЛЕНА АНИМАЦИЯ САЙДБАРА
+// Версия: 7.2.1 - ИСПРАВЛЕН ПЕРЕХОД В ЗАДАНИЯ
 // ============================================
 
-console.log('🚀 App v7.2.0 начал загрузку');
+console.log('🚀 App v7.2.1 начал загрузку');
 
 // ==========================================
 // ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
@@ -60,7 +60,7 @@ function showTelegramRequiredScreen() {
                     📲 Открыть в Telegram
                 </a>
                 <div style="margin-top: 24px; font-size: 12px; color: var(--app-text-tertiary, #A89880);">
-                    Версия 7.2.0
+                    Версия 7.2.1
                 </div>
             </div>
         `;
@@ -330,6 +330,29 @@ window.goToProfile = function() {
         window.eventBus.emit('navigation:open_profile');
     } else if (window.moduleLoader) {
         window.moduleLoader.load('profile');
+    }
+};
+
+// ==========================================
+// ✅ ПЕРЕХОД В ЗАДАНИЯ (ИСПРАВЛЕНО v7.2.1)
+// ==========================================
+
+window.goToTasks = function() {
+    console.log('🪙 [goToTasks] Переход в задания');
+    
+    // ✅ Закрываем сайдбар мгновенно
+    window.closeDrawer({ instant: true });
+    
+    // ✅ Используем NavigationState для перехода
+    if (window.navigationState) {
+        window.navigationState.navigate('tasks', {}, { addToHistory: true });
+    } else if (window.moduleLoader) {
+        window.moduleLoader.load('tasks');
+    }
+    
+    // ✅ Обновляем активную вкладку
+    if (window.navigation) {
+        window.navigation.setActive('tasks');
     }
 };
 
@@ -648,7 +671,7 @@ function appendDrawerNav(container) {
         <div class="drawer-nav-item" id="drawer-clear-cache" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; color: var(--app-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--app-font-family, -apple-system, sans-serif); -webkit-tap-highlight-color: transparent;">
             <i data-lucide="trash" style="width:20px;height:20px;"></i> Очистить кэш
         </div>
-        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.2.0</div>
+        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.2.1</div>
     `;
     
     container.appendChild(nav);
@@ -1367,7 +1390,7 @@ async function initApp() {
     const currentTheme = window.themeManager?.getCurrentTheme() || 'light';
     updateThemeLabel(currentTheme);
 
-    console.log('✅ Приложение v7.2.0 успешно загружено');
+    console.log('✅ Приложение v7.2.1 успешно загружено');
 }
 
 // ==========================================
@@ -1433,4 +1456,4 @@ setTimeout(initLucideIcons, 300);
 window.addEventListener('load', initLucideIcons);
 setTimeout(initLucideIcons, 1000);
 
-console.log('✅ app.js v7.2.0 полностью загружен');
+console.log('✅ app.js v7.2.1 полностью загружен');
