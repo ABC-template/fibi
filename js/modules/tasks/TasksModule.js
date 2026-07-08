@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/tasks/TasksModule.js 
 // Описание: Модуль заданий (геймификация)
-// Версия: 2.1.0 - ИСПРАВЛЕНО ПОВТОРНОЕ ОТКРЫТИЕ
+// Версия: 2.2.0 - ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ПРИ ПОКАЗЕ
 // ============================================
 
 class TasksModule {
@@ -11,6 +11,9 @@ class TasksModule {
         this._isInQuest = false;
         this.headerManager = window.headerManager;
         this.navigationState = window.navigationState;
+        this.eventBus = window.eventBus;
+        this._subscriptions = [];
+        this._isVisible = false;
     }
 
     async init() {
@@ -78,7 +81,7 @@ class TasksModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ TasksModule v2.1.0 инициализирован');
+        console.log('✅ TasksModule v2.2.0 инициализирован');
     }
 
     render() {
@@ -288,27 +291,39 @@ class TasksModule {
     // ==========================================
 
     show() {
-        // ✅ Всегда показываем и обновляем содержимое
-        // Убираем проверку, которая мешала повторному открытию
+        console.log('📱 TasksModule.show() вызван');
         
+        // ✅ Показываем модуль
         this.container.classList.remove('hidden');
         this.container.style.display = 'flex';
         this.container.style.flexDirection = 'column';
         this.container.style.height = '100%';
         this.container.style.width = '100%';
         
+        // ✅ Устанавливаем заголовок
         if (this.headerManager) {
             this.headerManager.setTitle(null);
             this.headerManager.setActions([]);
         }
         
-        // ✅ ВСЕГДА перерендериваем при показе
+        // ✅ ПРИНУДИТЕЛЬНО перерендериваем содержимое
+        // Это гарантирует, что данные всегда актуальны
         this.render();
         
+        // ✅ Обновляем нижнюю навигацию
         if (window.navigation) {
             window.navigation.show();
             window.navigation.setActive('tasks');
         }
+        
+        // ✅ Создаём иконки Lucide
+        setTimeout(() => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }, 100);
+        
+        console.log('✅ TasksModule показан и обновлён');
     }
 
     hide() {
@@ -319,4 +334,4 @@ class TasksModule {
 
 window.TasksModule = TasksModule;
 
-console.log('✅ TasksModule v2.1.0 загружен (исправлено повторное открытие)');
+console.log('✅ TasksModule v2.2.0 загружен (принудительное обновление при показе)');
