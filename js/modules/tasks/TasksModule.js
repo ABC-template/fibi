@@ -1,7 +1,7 @@
 // ============================================
 // js/modules/tasks/TasksModule.js 
 // Описание: Модуль заданий (геймификация)
-// Версия: 2.2.0 - ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ПРИ ПОКАЗЕ
+// Версия: 2.3.0 - УПРОЩЁННЫЙ (ПОЛНОСТЬЮ УПРАВЛЯЕТСЯ ИЗВНЕ)
 // ============================================
 
 class TasksModule {
@@ -20,12 +20,6 @@ class TasksModule {
         if (this.isInitialized) return;
 
         window.tasksModule = this;
-
-        // ✅ Пустой заголовок для стартовой страницы
-        if (this.headerManager) {
-            this.headerManager.setTitle(null);
-            this.headerManager.setActions([]);
-        }
 
         this.container.innerHTML = `
             <div style="padding: 16px; flex:1; overflow-y:auto; padding-bottom: 80px;">
@@ -81,7 +75,7 @@ class TasksModule {
         }, 200);
 
         this.isInitialized = true;
-        console.log('✅ TasksModule v2.2.0 инициализирован');
+        console.log('✅ TasksModule v2.3.0 инициализирован');
     }
 
     render() {
@@ -300,21 +294,17 @@ class TasksModule {
         this.container.style.height = '100%';
         this.container.style.width = '100%';
         
+        // ✅ Устанавливаем флаг видимости
+        this._isVisible = true;
+        
         // ✅ Устанавливаем заголовок
         if (this.headerManager) {
             this.headerManager.setTitle(null);
             this.headerManager.setActions([]);
         }
         
-        // ✅ ПРИНУДИТЕЛЬНО перерендериваем содержимое
-        // Это гарантирует, что данные всегда актуальны
+        // ✅ ВСЕГДА перерендериваем при показе
         this.render();
-        
-        // ✅ Обновляем нижнюю навигацию
-        if (window.navigation) {
-            window.navigation.show();
-            window.navigation.setActive('tasks');
-        }
         
         // ✅ Создаём иконки Lucide
         setTimeout(() => {
@@ -327,11 +317,29 @@ class TasksModule {
     }
 
     hide() {
+        this._isVisible = false;
         this.container.classList.add('hidden');
         this.container.style.display = 'none';
+    }
+
+    // ==========================================
+    // ОЧИСТКА ПОДПИСОК
+    // ==========================================
+
+    destroy() {
+        for (const unsub of this._subscriptions) {
+            try {
+                unsub();
+            } catch (e) {
+                console.warn('Ошибка отписки TasksModule:', e);
+            }
+        }
+        this._subscriptions = [];
+        this._isVisible = false;
+        console.log('📡 TasksModule отписан от событий');
     }
 }
 
 window.TasksModule = TasksModule;
 
-console.log('✅ TasksModule v2.2.0 загружен (принудительное обновление при показе)');
+console.log('✅ TasksModule v2.3.0 загружен (упрощённый)');
