@@ -1,10 +1,10 @@
 // ============================================
 // js/core/app.js
 // Описание: Инициализация приложения
-// Версия: 7.2.1 - ИСПРАВЛЕН ПЕРЕХОД В ЗАДАНИЯ
+// Версия: 7.2.2 - ИСПРАВЛЕН ПЕРЕХОД В ЗАДАНИЯ (ПРЯМОЙ ВЫЗОВ SHOW)
 // ============================================
 
-console.log('🚀 App v7.2.1 начал загрузку');
+console.log('🚀 App v7.2.2 начал загрузку');
 
 // ==========================================
 // ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
@@ -60,7 +60,7 @@ function showTelegramRequiredScreen() {
                     📲 Открыть в Telegram
                 </a>
                 <div style="margin-top: 24px; font-size: 12px; color: var(--app-text-tertiary, #A89880);">
-                    Версия 7.2.1
+                    Версия 7.2.2
                 </div>
             </div>
         `;
@@ -334,7 +334,7 @@ window.goToProfile = function() {
 };
 
 // ==========================================
-// ✅ ПЕРЕХОД В ЗАДАНИЯ (ИСПРАВЛЕНО v7.2.1)
+// ✅ ПЕРЕХОД В ЗАДАНИЯ (ИСПРАВЛЕНО v7.2.2)
 // ==========================================
 
 window.goToTasks = function() {
@@ -343,11 +343,21 @@ window.goToTasks = function() {
     // ✅ Закрываем сайдбар мгновенно
     window.closeDrawer({ instant: true });
     
-    // ✅ Используем NavigationState для перехода
-    if (window.navigationState) {
-        window.navigationState.navigate('tasks', {}, { addToHistory: true });
-    } else if (window.moduleLoader) {
-        window.moduleLoader.load('tasks');
+    // ✅ Получаем экземпляр модуля tasks
+    const tasksModule = window.moduleLoader ? window.moduleLoader.getModule('tasks') : null;
+    
+    if (tasksModule && typeof tasksModule.show === 'function') {
+        // ✅ Принудительно показываем и обновляем модуль
+        tasksModule.show();
+        console.log('✅ TasksModule принудительно обновлён через show()');
+    } else {
+        // Fallback: если модуль не загружен — загружаем через навигацию
+        console.log('📦 TasksModule не загружен, загружаем через NavigationState');
+        if (window.navigationState) {
+            window.navigationState.navigate('tasks', {}, { addToHistory: true });
+        } else if (window.moduleLoader) {
+            window.moduleLoader.load('tasks');
+        }
     }
     
     // ✅ Обновляем активную вкладку
@@ -671,7 +681,7 @@ function appendDrawerNav(container) {
         <div class="drawer-nav-item" id="drawer-clear-cache" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; color: var(--app-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--app-font-family, -apple-system, sans-serif); -webkit-tap-highlight-color: transparent;">
             <i data-lucide="trash" style="width:20px;height:20px;"></i> Очистить кэш
         </div>
-        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.2.1</div>
+        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.2.2</div>
     `;
     
     container.appendChild(nav);
@@ -943,27 +953,6 @@ function updateThemeLabel(theme) {
     const names = { 'light': 'Светлая', 'amoled': 'AMOLED' };
     label.textContent = names[theme] || 'Светлая';
 }
-
-// ==========================================
-// ПЕРЕХОД В ЗАДАНИЯ (через навигацию)
-// ==========================================
-
-window.goToTasks = function() {
-    console.log('🪙 [goToTasks] Переход в задания');
-    window.closeDrawer({ instant: true });
-    
-    // ✅ Используем NavigationState для перехода
-    if (window.navigationState) {
-        window.navigationState.navigate('tasks', {}, { addToHistory: true });
-    } else if (window.moduleLoader) {
-        window.moduleLoader.load('tasks');
-    }
-    
-    // ✅ Обновляем активную вкладку
-    if (window.navigation) {
-        window.navigation.setActive('tasks');
-    }
-};
 
 // ==========================================
 // ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ МОДАЛОК
@@ -1390,7 +1379,7 @@ async function initApp() {
     const currentTheme = window.themeManager?.getCurrentTheme() || 'light';
     updateThemeLabel(currentTheme);
 
-    console.log('✅ Приложение v7.2.1 успешно загружено');
+    console.log('✅ Приложение v7.2.2 успешно загружено');
 }
 
 // ==========================================
@@ -1456,4 +1445,4 @@ setTimeout(initLucideIcons, 300);
 window.addEventListener('load', initLucideIcons);
 setTimeout(initLucideIcons, 1000);
 
-console.log('✅ app.js v7.2.1 полностью загружен');
+console.log('✅ app.js v7.2.2 полностью загружен');
