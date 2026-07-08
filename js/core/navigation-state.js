@@ -1,7 +1,7 @@
 // ============================================
 // js/core/navigation-state.js
 // Описание: Единое состояние навигации
-// Версия: 6.0.0 - РАЗДЕЛЕНИЕ СОСТОЯНИЯ И DOM
+// Версия: 6.2.0 - ЕДИНСТВЕННЫЙ ИСТОЧНИК ПРАВДЫ
 // ============================================
 
 class NavigationState {
@@ -24,7 +24,7 @@ class NavigationState {
         
         this._subscribe();
         
-        console.log('✅ NavigationState v6.0.0 инициализирован');
+        console.log('✅ NavigationState v6.2.0 инициализирован');
     }
 
     get moduleLoader() {
@@ -163,18 +163,15 @@ class NavigationState {
     }
 
     // ==========================================
-    // НАВИГАЦИЯ
+    // НАВИГАЦИЯ (ЕДИНСТВЕННЫЙ МЕТОД ПЕРЕКЛЮЧЕНИЯ)
     // ==========================================
 
     async navigate(module, params = {}, options = {}) {
-        const { replace = false, silent = false, addToHistory = true, force = false } = options;
+        const { replace = false, silent = false, addToHistory = true } = options;
         
-        if (!force && this._state.module === module && 
-            JSON.stringify(this._state.params) === JSON.stringify(params)) {
-            console.log(`⏭️ Уже в модуле ${module}, пропускаем`);
-            return;
-        }
-
+        // ✅ УБИРАЕМ ПРОВЕРКУ "уже в модуле"
+        // Теперь навигация ВСЕГДА обрабатывается, даже если модуль тот же
+        
         if (this._isLoading) {
             console.log(`⏳ Уже выполняется навигация, пропускаем`);
             return;
@@ -183,6 +180,7 @@ class NavigationState {
         this._isLoading = true;
 
         try {
+            // ✅ Сохраняем в историю (если не replace)
             if (addToHistory && !replace && !silent) {
                 this._state.history.push({
                     module: this._state.module,
@@ -195,6 +193,9 @@ class NavigationState {
             }
 
             const oldModule = this._state.module;
+            const oldParams = { ...this._state.params };
+            
+            // ✅ Обновляем состояние ДО загрузки модуля
             this._state.module = module;
             this._state.params = { ...params };
 
@@ -206,23 +207,32 @@ class NavigationState {
             if (loader) {
                 console.log(`📦 Загружаем модуль: ${module}`, params);
                 
+                // ✅ Загружаем модуль через ModuleLoader
                 const instance = await loader.load(module, params, { 
                     silent: silent,
-                    replace: replace,
-                    force: force
+                    replace: replace
                 });
                 
                 if (!instance) {
                     console.error(`❌ Не удалось загрузить модуль ${module}`);
+                    // Откатываем состояние
                     this._state.module = oldModule;
+                    this._state.params = oldParams;
                     this._isLoading = false;
                     return;
                 }
                 
-                console.log(`✅ Модуль ${module} загружен`);
+                // ✅ ВСЕГДА вызываем show() у модуля
+                if (typeof instance.show === 'function') {
+                    await instance.show(params);
+                    console.log(`✅ show() вызван у модуля ${module}`);
+                }
+                
+                console.log(`✅ Модуль ${module} загружен и показан`);
             } else {
                 console.error(`❌ ModuleLoader не доступен!`);
                 this._state.module = oldModule;
+                this._state.params = oldParams;
                 this._isLoading = false;
                 return;
             }
@@ -471,4 +481,4 @@ if (document.readyState === 'loading') {
     }
 }
 
-console.log('✅ NavigationState v6.0.0 загружен');
+console.log('✅ NavigationState v6.2.0 загружен (единый источник правды)');
