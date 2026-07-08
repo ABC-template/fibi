@@ -1,10 +1,10 @@
 // ============================================
 // js/core/app.js
 // Описание: Инициализация приложения
-// Версия: 7.2.2 - ИСПРАВЛЕН ПЕРЕХОД В ЗАДАНИЯ (ПРЯМОЙ ВЫЗОВ SHOW)
+// Версия: 7.3.0 - ПРАВИЛЬНАЯ АРХИТЕКТУРА НАВИГАЦИИ
 // ============================================
 
-console.log('🚀 App v7.2.2 начал загрузку');
+console.log('🚀 App v7.3.0 начал загрузку');
 
 // ==========================================
 // ПРОВЕРКА: ОТКРЫТО ЛИ В TELEGRAM?
@@ -60,7 +60,7 @@ function showTelegramRequiredScreen() {
                     📲 Открыть в Telegram
                 </a>
                 <div style="margin-top: 24px; font-size: 12px; color: var(--app-text-tertiary, #A89880);">
-                    Версия 7.2.2
+                    Версия 7.3.0
                 </div>
             </div>
         `;
@@ -206,7 +206,7 @@ window.fullDataReload = async function() {
 };
 
 // ==========================================
-// УПРАВЛЕНИЕ САЙДБАРОМ (ИСПРАВЛЕНО! v7.2.0)
+// УПРАВЛЕНИЕ САЙДБАРОМ
 // ==========================================
 
 window.openDrawer = function() {
@@ -221,14 +221,12 @@ window.openDrawer = function() {
     renderChatsInDrawer();
     updateDrawerCoins();
     
-    // ✅ Сразу показываем сайдбар и оверлей
     overlay.classList.add('active');
     drawer.classList.add('active');
     drawer.classList.remove('drawer-anim-out');
     drawer.classList.add('drawer-anim-in');
     document.body.style.overflow = 'hidden';
     
-    // ✅ Обновляем состояние навигации (только состояние, DOM уже обновлён)
     if (window.navigationState) {
         window.navigationState.toggleDrawer(true);
     }
@@ -244,18 +242,15 @@ window.closeDrawer = function(options = {}) {
     const drawer = document.getElementById('drawer');
     if (!overlay || !drawer) return;
     
-    // ✅ 1. СРАЗУ убираем класс active (кнопка скроется мгновенно)
     drawer.classList.remove('active');
     overlay.classList.remove('active');
     document.body.style.overflow = '';
     
-    // ✅ 2. Добавляем анимацию для плавного исчезновения (если не instant)
     drawer.classList.remove('drawer-anim-in');
     if (!instant) {
         drawer.classList.add('drawer-anim-out');
     }
     
-    // ✅ 3. Обновляем состояние навигации
     if (window.navigationState) {
         window.navigationState.toggleDrawer(false);
     }
@@ -264,7 +259,6 @@ window.closeDrawer = function(options = {}) {
         window.eventBus.emit('drawer:state_changed', { isOpen: false });
     }
     
-    // ✅ 4. Убираем класс анимации после завершения
     if (!instant) {
         setTimeout(() => {
             drawer.classList.remove('drawer-anim-out');
@@ -287,13 +281,11 @@ document.addEventListener('click', function(e) {
 });
 
 // ==========================================
-// ОТКРЫТИЕ ЧАТА (НОВАЯ ВЕРСИЯ)
+// ОТКРЫТИЕ ЧАТА
 // ==========================================
 
 window.openChat = function(chatId, topic) {
     console.log(`📂 [openChat] Открываем чат: ${chatId} (${topic})`);
-    
-    // ✅ САЙДБАР ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ В navigationState.openChat()
     
     if (window.eventBus) {
         window.eventBus.emit('navigation:open_chat', { chatId, topic });
@@ -334,7 +326,7 @@ window.goToProfile = function() {
 };
 
 // ==========================================
-// ✅ ПЕРЕХОД В ЗАДАНИЯ (ИСПРАВЛЕНО v7.2.2)
+// ✅ ПЕРЕХОД В ЗАДАНИЯ (ПРАВИЛЬНАЯ АРХИТЕКТУРА v7.3.0)
 // ==========================================
 
 window.goToTasks = function() {
@@ -343,24 +335,15 @@ window.goToTasks = function() {
     // ✅ Закрываем сайдбар мгновенно
     window.closeDrawer({ instant: true });
     
-    // ✅ Получаем экземпляр модуля tasks
-    const tasksModule = window.moduleLoader ? window.moduleLoader.getModule('tasks') : null;
-    
-    if (tasksModule && typeof tasksModule.show === 'function') {
-        // ✅ Принудительно показываем и обновляем модуль
-        tasksModule.show();
-        console.log('✅ TasksModule принудительно обновлён через show()');
-    } else {
-        // Fallback: если модуль не загружен — загружаем через навигацию
-        console.log('📦 TasksModule не загружен, загружаем через NavigationState');
-        if (window.navigationState) {
-            window.navigationState.navigate('tasks', {}, { addToHistory: true });
-        } else if (window.moduleLoader) {
-            window.moduleLoader.load('tasks');
-        }
+    // ✅ ЕДИНСТВЕННЫЙ ПРАВИЛЬНЫЙ СПОСОБ: через NavigationState
+    if (window.navigationState) {
+        window.navigationState.navigate('tasks', {}, { addToHistory: true });
+    } else if (window.moduleLoader) {
+        // Fallback: если NavigationState не доступен
+        window.moduleLoader.load('tasks');
     }
     
-    // ✅ Обновляем активную вкладку
+    // ✅ Обновляем активную вкладку в нижней навигации
     if (window.navigation) {
         window.navigation.setActive('tasks');
     }
@@ -681,7 +664,7 @@ function appendDrawerNav(container) {
         <div class="drawer-nav-item" id="drawer-clear-cache" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; color: var(--app-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--app-font-family, -apple-system, sans-serif); -webkit-tap-highlight-color: transparent;">
             <i data-lucide="trash" style="width:20px;height:20px;"></i> Очистить кэш
         </div>
-        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.2.2</div>
+        <div style="padding: 8px 20px 4px 20px; font-size: 11px; color: var(--app-text-tertiary); text-align: center;">Версия 7.3.0</div>
     `;
     
     container.appendChild(nav);
@@ -1379,7 +1362,7 @@ async function initApp() {
     const currentTheme = window.themeManager?.getCurrentTheme() || 'light';
     updateThemeLabel(currentTheme);
 
-    console.log('✅ Приложение v7.2.2 успешно загружено');
+    console.log('✅ Приложение v7.3.0 успешно загружено');
 }
 
 // ==========================================
@@ -1445,4 +1428,4 @@ setTimeout(initLucideIcons, 300);
 window.addEventListener('load', initLucideIcons);
 setTimeout(initLucideIcons, 1000);
 
-console.log('✅ app.js v7.2.2 полностью загружен');
+console.log('✅ app.js v7.3.0 полностью загружен');
